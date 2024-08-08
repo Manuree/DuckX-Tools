@@ -316,16 +316,18 @@ class VIEW3D_PT_MainPanel(Panel):
             obj = bpy.context.active_object
             selected_objects = bpy.context.selected_objects
             if selected_objects:
-                if obj.type == 'MESH':
-                    uvmaps = obj.data.uv_layers
-                    for uvmap in uvmaps:
-                        if obj.data.uv_layers.active.name == uvmap.name:
-                            row = box.row()
-                            row.label(text="UV Map Active : " + uvmap.name)
-                            row.prop(uvmap, "active_render", text="", icon="RESTRICT_RENDER_OFF")
-                else:
-                    row = box.row()
-                    row.label(text="Please Select Mesh")
+                print(obj)
+                if obj:
+                    if obj.type == 'MESH':
+                        uvmaps = obj.data.uv_layers
+                        for uvmap in uvmaps:
+                            if obj.data.uv_layers.active.name == uvmap.name:
+                                row = box.row()
+                                row.label(text="UV Map Active : " + uvmap.name)
+                                row.prop(uvmap, "active_render", text="", icon="RESTRICT_RENDER_OFF")
+                    else:
+                        row = box.row()
+                        row.label(text="Please Select Mesh")
                 
             row = box.row()
             row.prop(duckx_tools, "uvmap_set_type", expand=True)

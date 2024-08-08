@@ -14,8 +14,18 @@ class Duckx_OT_ActiveUVMap(Operator):
     
     @classmethod
     def poll(cls, context):
-        selected_object = context.active_object
-        return context.selected_objects and selected_object.type == 'MESH'
+        selected_objects = context.selected_objects
+        
+        # Check if any objects are selected
+        if not selected_objects:
+            return False 
+
+        # Check if the active object is a mesh or a curve
+        active_object = context.active_object
+        if active_object and (active_object.type == 'MESH' or active_object.type == 'CURVE'):
+            return True
+        
+        return False
     
     def execute(self, context):
         action = self.action
