@@ -50,6 +50,7 @@ class Duckx_OT_ShowAndHide(Operator):
         elif action == "show":
             print("Show group")
             print(list_groups[index])
+            
             try:
                 bpy.ops.object.mode_set(mode='OBJECT')
             except:

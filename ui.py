@@ -131,6 +131,8 @@ class VIEW3D_PT_MainPanel(Panel):
                 row.operator("duckx_tools.utilities_operator", text="Boundary Sharp", icon="MATPLANE").action ="Boundary Sharp"
                 row = layout.row()
                 row.operator("duckx_tools.invert_in_loose_parts_operator", text="Invert In Loose Parts", icon="MOD_EXPLODE")
+                row = layout.row()
+                row.operator("duckx_tools.select_by_distance_operator", text="Select By Distance", icon="FIXED_SIZE")
                 
                 #Merge Tools
                 box = layout.box()
@@ -175,7 +177,9 @@ class VIEW3D_PT_MainPanel(Panel):
             row = box.row()
             if duckx_tools.movex_tools != False:
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_DOWN").prop_name = "movex_tools"
-                row.label(text="Move Tools")
+                row.label(text="Transfrom Tools")
+                row = box.row(align=True)
+                row.label(text="Move")
                 row = box.row(align=True)
                 row.label(text="")
                 bt = row.operator("duckx_tools.movex_tools_operator", text="-")
@@ -201,9 +205,36 @@ class VIEW3D_PT_MainPanel(Panel):
                 bt = row.operator("duckx_tools.movex_tools_operator", text="+" )
                 bt.action = "y"
                 bt.minus = False
+                row = box.row(align=True)
+                row.label(text="Scale")
+                row = box.row(align=True)
+                row.label(text="")
+                bt = row.operator("duckx_tools.scale_from_active_operator", text="-")
+                bt.action = "z"
+                bt.minus = True
+                row.label(text="", icon_value=icon_reg.iconLib("giz_Z"))
+                bt = row.operator("duckx_tools.scale_from_active_operator", text="+" )
+                bt.action = "z"
+                bt.minus = False
+                row.label(text="")
+                row = box.row(align=True)
+                bt = row.operator("duckx_tools.scale_from_active_operator", text="-")
+                bt.action = "x"
+                bt.minus = True
+                row.label(text="", icon_value=icon_reg.iconLib("giz_X"))
+                bt = row.operator("duckx_tools.scale_from_active_operator", text="+" )
+                bt.action = "x"
+                bt.minus = False
+                bt = row.operator("duckx_tools.scale_from_active_operator", text="-")
+                bt.action = "y"
+                bt.minus = True
+                row.label(text="", icon_value=icon_reg.iconLib("giz_Y"))
+                bt = row.operator("duckx_tools.scale_from_active_operator", text="+" )
+                bt.action = "y"
+                bt.minus = False
             else:
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "movex_tools"
-                row.label(text="Move Tools")
+                row.label(text="Transfrom Tools")
 
             #Shape Tools
             box = layout.box()

@@ -31,7 +31,7 @@ class MyProperties(PropertyGroup):
     merge_tools : BoolProperty(name="Merge Tools Toggle", default=False)
     movex_tools : BoolProperty(name="Merge Tools Toggle", default=False)
     show_hide_panel : BoolProperty(name="Show & Hide Panel", default=True)
-    decals_panel : BoolProperty(name="Decals Panel", default=True)
+    decals_panel : BoolProperty(name="Decals Panel", default=False)
 
     obj_color : FloatVectorProperty(name="Color", subtype='COLOR', size=4, min=0, max=1, default=(0.0, 0.0, 0.0, 1.0),)
     name_to_mesh : BoolProperty(name="Mesh Data Name Tools Toggle", default=True)
