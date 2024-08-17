@@ -178,6 +178,36 @@ class Duckx_OT_MoveXTools(Operator):
         bpy.context.scene.tool_settings.transform_pivot_point = pivot
 
         return {'FINISHED'}
+    
+class Duckx_OT_ScaleFromActive(Operator):
+    bl_idname = "duckx_tools.scale_from_active_operator"
+    bl_label = "Scale From Active"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "EMPTY_ARROWS"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Scale From Active Selected"
+
+    action : EnumProperty(
+        name = "Property",
+        items = [('x', "X", ""),('y', "Y", ""), ('z', "Z", "")]
+        )
+    
+    value : FloatProperty(name="Move Value", default=0.1, min=0)
+    minus : BoolProperty(name="Minus", default=True)
+    
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'EDIT_MESH'
+    
+    def execute(self, context):
+        bpy.context.scene.tool_settings.transform_pivot_point = 'ACTIVE_ELEMENT'
+        bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
+        bpy.ops.mesh.select_prev_item()
+        
+        
+
+        return {'FINISHED'}
 
 class Duckx_OT_RemoveLoopRing(Operator):
     bl_idname = "duckx_tools.remove_loop_operator"
@@ -393,7 +423,53 @@ class Duckx_OT_MoveVertexToActive(Operator):
         bpy.ops.mesh.remove_doubles()
         bmesh.update_edit_mesh(me)
         return {'FINISHED'}
+
+class Duckx_OT_SelectByDistance(Operator):
+    bl_idname = "duckx_tools.select_by_distance_operator"
+    bl_label = "Select By Distance"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "FIXED_SIZE"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Select By Distance and Next"
+
+    distance : FloatProperty(name="Distance", precision=5)
+    threshold : FloatProperty(name="Threshold", default=0.000, precision=5, step=0.0010)
     
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        obj = context.edit_object
+        me = obj.data
+
+        bm = bmesh.from_edit_mesh(me)
+        bm.faces.ensure_lookup_table()  # Ensure face data is updated
+
+        if bpy.context.tool_settings.mesh_select_mode[2]:
+            face_list = []
+            for face in bm.faces:
+                if face.select:
+                    face_list.append(face)
+            if len(face_list) > 1:
+                a = face_list[0].calc_center_median().length
+                print(a)
+                b = face_list[-1].calc_center_median().length
+                print(b)
+                self.distance = round(a - b, 5)
+                print(abs(round(a - b, 5)))
+                # for face in bm.faces:
+                #     new_distance = round(b - face.calc_center_median().length, 5)
+                #     # print(new_distance, round(self.distance - self.threshold, 5))
+                #     print(new_distance, round(self.distance, 5))
+                #     if new_distance >= round(self.distance, 5):
+                #         print(new_distance)
+                # #         face.select = True
+                # # b = face.calc_center_median().length
+
+        bmesh.update_edit_mesh(me)
+        return {'FINISHED'}
 
 class Duckx_OT_Utilities(Operator):
     bl_idname = "duckx_tools.utilities_operator"
@@ -492,8 +568,8 @@ class Duckx_OT_ConsoleCommand(Operator):
 
     
 classes = [Duckx_OT_ToggleProp, Duckx_OT_ConvexTools, Duckx_OT_BoxFromMesh,
-           Duckx_OT_MoveXTools, Duckx_OT_RemoveLoopRing, Duckx_OT_InvertSeam,
-           Duckx_OT_InvertInLooseParts,
+           Duckx_OT_MoveXTools, Duckx_OT_ScaleFromActive, Duckx_OT_RemoveLoopRing, Duckx_OT_InvertSeam,
+           Duckx_OT_InvertInLooseParts, Duckx_OT_SelectByDistance,
            Duckx_OT_MoveVertexToActive, Duckx_OT_Utilities, Duckx_OT_ConsoleCommand]
     
 def register():
