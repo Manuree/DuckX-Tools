@@ -172,7 +172,7 @@ class VIEW3D_PT_MainPanel(Panel):
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "flip_tools_toggle"
                 row.label(text="Flip")
 
-            #MoveX Tools
+            #Transfrom Tools
             box = layout.box()
             row = box.row()
             if duckx_tools.movex_tools != False:
@@ -181,57 +181,20 @@ class VIEW3D_PT_MainPanel(Panel):
                 row = box.row(align=True)
                 row.label(text="Move")
                 row = box.row(align=True)
-                row.label(text="")
-                bt = row.operator("duckx_tools.movex_tools_operator", text="-")
-                bt.action = "z"
-                bt.minus = True
-                row.label(text="", icon_value=icon_reg.iconLib("giz_Z"))
-                bt = row.operator("duckx_tools.movex_tools_operator", text="+" )
-                bt.action = "z"
-                bt.minus = False
-                row.label(text="")
+                row.scale_y = 0.1
+                row.enabled = False
+                row.label(text="Ctrl Click for invert axis")
                 row = box.row(align=True)
-                bt = row.operator("duckx_tools.movex_tools_operator", text="-")
-                bt.action = "x"
-                bt.minus = True
-                row.label(text="", icon_value=icon_reg.iconLib("giz_X"))
-                bt = row.operator("duckx_tools.movex_tools_operator", text="+" )
-                bt.action = "x"
-                bt.minus = False
-                bt = row.operator("duckx_tools.movex_tools_operator", text="-")
-                bt.action = "y"
-                bt.minus = True
-                row.label(text="", icon_value=icon_reg.iconLib("giz_Y"))
-                bt = row.operator("duckx_tools.movex_tools_operator", text="+" )
-                bt.action = "y"
-                bt.minus = False
-                row = box.row(align=True)
-                row.label(text="Scale")
-                row = box.row(align=True)
-                row.label(text="")
-                bt = row.operator("duckx_tools.scale_from_active_operator", text="-")
-                bt.action = "z"
-                bt.minus = True
-                row.label(text="", icon_value=icon_reg.iconLib("giz_Z"))
-                bt = row.operator("duckx_tools.scale_from_active_operator", text="+" )
-                bt.action = "z"
-                bt.minus = False
-                row.label(text="")
-                row = box.row(align=True)
-                bt = row.operator("duckx_tools.scale_from_active_operator", text="-")
-                bt.action = "x"
-                bt.minus = True
-                row.label(text="", icon_value=icon_reg.iconLib("giz_X"))
-                bt = row.operator("duckx_tools.scale_from_active_operator", text="+" )
-                bt.action = "x"
-                bt.minus = False
-                bt = row.operator("duckx_tools.scale_from_active_operator", text="-")
-                bt.action = "y"
-                bt.minus = True
-                row.label(text="", icon_value=icon_reg.iconLib("giz_Y"))
-                bt = row.operator("duckx_tools.scale_from_active_operator", text="+" )
-                bt.action = "y"
-                bt.minus = False
+                row.scale_y = 1.5
+                row.scale_x = 5
+                row.alignment = "CENTER"
+                bt = row.operator("duckx_tools.movex_tools_operator", text="", icon_value=icon_reg.iconLib("giz_X"))
+                bt.move_axis = "x"
+                bt = row.operator("duckx_tools.movex_tools_operator", text="", icon_value=icon_reg.iconLib("giz_Y"))
+                bt.move_axis = "y"
+                bt = row.operator("duckx_tools.movex_tools_operator", text="", icon_value=icon_reg.iconLib("giz_Z"))
+                bt.move_axis = "z"
+                
             else:
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "movex_tools"
                 row.label(text="Transfrom Tools")
@@ -243,12 +206,14 @@ class VIEW3D_PT_MainPanel(Panel):
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_DOWN").prop_name = "shape_tools"
                 row.label(text="Shape")
                 row = box.row()
-                if len(selected_objects) != 0 and active_object.type == "MESH":
-                    row.enabled = True
-                else:
-                    row.enabled = False
+                # if len(selected_objects) != 0 and active_object.type == "MESH":
+                #     row.enabled = True
+                # else:
+                #     row.enabled = False
                 row.operator("duckx_tools.convex_tools_operator", text="Convex X", icon="MESH_ICOSPHERE")
                 row.operator("duckx_tools.box_from_mesh_operator", text="Box Mesh", icon="MESH_CUBE")
+                row = box.row()
+                row.operator("duckx_tools.mesh_to_box_operator", text="Mesh To Box", icon="MESH_CUBE")
             else:
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "shape_tools"
                 row.label(text="Shape")
