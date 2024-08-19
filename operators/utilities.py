@@ -129,7 +129,8 @@ class Duckx_OT_MeshToBox(Operator):
 
     box_offset : FloatProperty(name="Box Offset", min=0, max=1, default=0.0001, step=0.0001, precision=4)
     remove_doubles : FloatProperty(name="Remove Doubles", min=0, max=1, default=0.0002, step=0.0001, precision=4)
-
+    fill_hole : BoolProperty(name="Fill Hole", default=True)
+    
     def execute(self, context):
         obj = bpy.context.active_object
         main_object = obj
@@ -183,7 +184,8 @@ class Duckx_OT_MeshToBox(Operator):
         bpy.ops.object.modifier_add(type='BOOLEAN')
         bpy.context.object.modifiers["Boolean"].object = box
         bpy.context.object.modifiers["Boolean"].operation = 'INTERSECT'
-        bpy.context.object.modifiers["Boolean"].use_self = True
+        if self.fill_hole:
+            bpy.context.object.modifiers["Boolean"].use_self = True
 
 
 
@@ -207,6 +209,7 @@ class Duckx_OT_MeshToBox(Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         func_core.select_object_by_name(main_object.name)
         bpy.ops.object.join()
+        bpy.ops.object.mode_set(mode='EDIT')
 
         return {'FINISHED'}
     
