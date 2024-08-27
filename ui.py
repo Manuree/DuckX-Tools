@@ -131,8 +131,8 @@ class VIEW3D_PT_MainPanel(Panel):
                 row.operator("duckx_tools.utilities_operator", text="Boundary Sharp", icon="MATPLANE").action ="Boundary Sharp"
                 row = layout.row()
                 row.operator("duckx_tools.invert_in_loose_parts_operator", text="Invert In Loose Parts", icon="MOD_EXPLODE")
-                row = layout.row()
-                row.operator("duckx_tools.select_by_distance_operator", text="Select By Distance", icon="FIXED_SIZE")
+                #row = layout.row()
+                #row.operator("duckx_tools.select_by_distance_operator", text="Select By Distance", icon="FIXED_SIZE")
                 
                 #Merge Tools
                 box = layout.box()

@@ -132,6 +132,12 @@ class Duckx_OT_MeshToBox(Operator):
     fill_hole : BoolProperty(name="Fill Hole", default=True)
     
     def execute(self, context):
+        pivot = bpy.context.scene.tool_settings.transform_pivot_point
+        orient = bpy.context.scene.transform_orientation_slots[0].type
+        
+        
+        
+
         obj = bpy.context.active_object
         main_object = obj
         print(f"Main Object {main_object.name}")
@@ -210,6 +216,9 @@ class Duckx_OT_MeshToBox(Operator):
         func_core.select_object_by_name(main_object.name)
         bpy.ops.object.join()
         bpy.ops.object.mode_set(mode='EDIT')
+        
+        bpy.context.scene.tool_settings.transform_pivot_point = pivot
+        bpy.context.scene.transform_orientation_slots[0].type = orient
 
         return {'FINISHED'}
     
