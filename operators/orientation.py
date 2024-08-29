@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 from bpy.types import (Operator)
+from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
 class Duckx_OT_OrientSelect(Operator):
     bl_idname = "duckx_tools.orienselect_operator"
@@ -38,8 +39,30 @@ class Duckx_OT_OrientGlobal(Operator):
     bl_options = {"REGISTER", "UNDO"}
     bl_description = "Back to orientation Global and remove Face orientation"
 
+    pivot : EnumProperty(
+        name = "Pivot",
+        items = [('current', "Current", ""),
+                ('bounding', "Bounding", ""),
+                ('cursor', "Cursor", ""),
+                ('individual', "Individual", ""),
+                ('median', "Median", ""),
+                ('active', "Active", "")
+                ]
+    )
+    
     def execute(self, context):
-        pivot_point = bpy.context.scene.tool_settings.transform_pivot_point
+        if self.pivot == "bounding":
+            pivot_point = "BOUNDING_BOX_CENTER"
+        elif self.pivot == "cursor":
+            pivot_point = "CURSOR"
+        elif self.pivot == "individual":
+            pivot_point = "INDIVIDUAL_ORIGINS"
+        elif self.pivot == "median":
+            pivot_point = "MEDIAN_POINT"
+        elif self.pivot == "active":
+            pivot_point = "ACTIVE_ELEMENT"
+        else:
+            pivot_point = bpy.context.scene.tool_settings.transform_pivot_point
         types = ["Face", "Edge", "Vertex"]
         for type in types:
             try:
