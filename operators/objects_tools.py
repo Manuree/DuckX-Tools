@@ -26,7 +26,7 @@ class Duckx_OT_ObjectColors(Operator):
         if self.action == "set":
             selected_objects = bpy.context.selected_objects
             for obj in selected_objects:
-                obj.color = duckx_tools.objColor
+                obj.color = duckx_tools.obj_color
         elif self.action == "select":
             active_object = bpy.context.active_object
             for obj in bpy.context.scene.objects:
@@ -37,7 +37,7 @@ class Duckx_OT_ObjectColors(Operator):
                 else:
                     obj.select_set(False)
         elif self.action == "pick":
-            duckx_tools.objColor = active_object = bpy.context.active_object.color
+            duckx_tools.obj_color = active_object = bpy.context.active_object.color
         return {'FINISHED'}
 
 class Duckx_OT_ObjectWire(Operator):
