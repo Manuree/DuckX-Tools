@@ -15,8 +15,8 @@ from bpy.types import Header
 
 
 
-class VIEW3D_PT_MainPanel(Panel):
-    bl_idname = "VIEW3D_PT_Main_panel"
+class VIEW3D_PT_Duckx_MainPanel(Panel):
+    bl_idname = "VIEW3D_PT_Duckx_Main_panel"
     bl_label = " Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -502,7 +502,7 @@ class DuckXMenu(Menu):
         layout.separator()
         layout.operator("duckx_tools.console_command_operator", text="Console", icon="CONSOLE")
 
-classes = [VIEW3D_PT_MainPanel, VIEW3D_PT_TriangleMenu, VIEW3D_PT_DecalsTools, VIEW3D_PT_ShowHide, DuckXMenu]
+classes = [VIEW3D_PT_Duckx_MainPanel, VIEW3D_PT_TriangleMenu, VIEW3D_PT_DecalsTools, VIEW3D_PT_ShowHide, DuckXMenu]
 
 def register():
     for cls in classes:
