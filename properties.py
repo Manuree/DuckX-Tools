@@ -19,6 +19,11 @@ class MyProperties(PropertyGroup):
                  ]
     )
 
+    # Object Info
+    object_name : BoolProperty(name="Object Name", default=False)
+    mesh_name : BoolProperty(name="Mesh Name", default=False)
+    custom_props : BoolProperty(name="Custom Properties", default=False)
+    
     auto_keymap : BoolProperty(name="Auto Assign Keymap Toggle", default=True)
     tri_count : BoolProperty(name="Triangles count", default=False)
     tri_track : BoolProperty(name="Triangles tracker", default=False)

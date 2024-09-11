@@ -43,6 +43,18 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
 
         layout = self.layout
         
+        if duckx_tools.object_name == True:
+            if active_object:
+                if active_object.type == 'MESH':
+                    box = layout.box()
+                    col = box.column()
+                    row = col.row()
+                    row.label(text="", icon="OUTLINER_OB_MESH")
+                    row.prop(active_object, "name", text="")
+                    row = col.row()
+                    row.label(text="", icon="OUTLINER_DATA_MESH")
+                    row.prop(active_object.data, "name", text="")
+            
         
         if duckx_tools.tri_count == True:
             row = layout.row()
@@ -345,6 +357,11 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
         elif duckx_tools.tabs_menu == "setting":
             row = layout.row()
             row.label(text="Setting :")
+            box = layout.box()
+            col = box.column(heading="Object Info", align=True)
+            col.prop(duckx_tools, "object_name")
+            col.prop(duckx_tools, "mesh_name")
+            col.prop(duckx_tools, "custom_props")
             box = layout.box()
             col = box.column(heading="", align=True)
             col.prop(duckx_tools, "show_hide_panel")
