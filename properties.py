@@ -22,7 +22,9 @@ class MyProperties(PropertyGroup):
     # Object Info
     object_name : BoolProperty(name="Object Name", default=False)
     mesh_name : BoolProperty(name="Mesh Name", default=False)
+    uvmaps : BoolProperty(name="UV Maps", default=True)
     custom_props : BoolProperty(name="Custom Properties", default=False)
+    filter_props : StringProperty(name="Filter Properties")
     
     auto_keymap : BoolProperty(name="Auto Assign Keymap Toggle", default=True)
     tri_count : BoolProperty(name="Triangles count", default=False)
@@ -46,7 +48,7 @@ class MyProperties(PropertyGroup):
                  ('index', "Index", "")
                  ]
     )
-    uvmap_name : StringProperty(name="UV Map Name")
+    uvmap_name : StringProperty(name="UV Map Name", default="UVMap")
     uvmap_index : IntProperty(name="UV Map Index", min=1, default=1)
     uv_angle : FloatProperty(name="UV Angle", step=1, default=0.0, precision=2)
 

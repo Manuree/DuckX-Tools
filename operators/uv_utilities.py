@@ -8,9 +8,10 @@ import math
 class Duckx_OT_ActiveUVMap(Operator):
     bl_idname = "duckx_tools.active_uv_map_operator"
     bl_label = "UV Map"
-    bl_description = "UV Maps Tools"
+    bl_description = "SHIFT CLICK for rename, CTRL CLICK for New, ALT CLICK for remove UV Map"
 
     action : StringProperty(name="Action")
+    edit = False
     
     @classmethod
     def poll(cls, context):
@@ -26,6 +27,41 @@ class Duckx_OT_ActiveUVMap(Operator):
             return True
         
         return False
+    
+    def invoke(self, context, event):
+        parts = self.action.split(':>')
+        objs = context.selected_objects
+        if event.shift and "duckx_uvset:>" in self.action:
+            self.edit = True
+            for obj in objs:
+                if obj.type == "MESH":
+                    obj.data.uv_layers.active_index = int(parts[1])
+                    for uv_layer in obj.data.uv_layers:
+                        if uv_layer.name == parts[2]:
+                            uv_layer.active_render = True
+                            break
+            wm = context.window_manager
+            return wm.invoke_props_dialog(self)
+        elif event.alt and "duckx_uvset:>" in self.action:
+            for obj in objs:
+                if obj.type == "MESH":
+                    for uv_layer in obj.data.uv_layers:
+                        if uv_layer.name == parts[2]:
+                            obj.data.uv_layers.remove(uv_layer)
+            return self.execute(context)
+        elif event.ctrl and "duckx_uvset:>" in self.action:
+            self.action = "new"
+            return self.execute(context)
+        else:
+            return self.execute(context)
+        
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        uvmaps = context.active_object.data.uv_layers
+        for uvmap in uvmaps:
+            if context.active_object.data.uv_layers.active.name == uvmap.name:
+                row.prop(uvmap, "name", text="")
     
     def execute(self, context):
         action = self.action
@@ -52,6 +88,23 @@ class Duckx_OT_ActiveUVMap(Operator):
                             if uv_layer.name == duckx_tools.uvmap_name:
                                 uv_layer.active = True
                                 break
+        elif "duckx_uvset:>" in action:
+            parts = action.split(':>')
+            print(parts[2])
+            objs = context.selected_objects
+            if not self.edit:
+                for obj in objs:
+                    if obj.type == "MESH":
+                        obj.data.uv_layers.active_index = int(parts[1])
+                        for uv_layer in obj.data.uv_layers:
+                            if uv_layer.name == parts[2]:
+                                uv_layer.active_render = True
+                                break
+            elif self.edit:
+                for obj in objs:
+                    if obj.type == "MESH":
+                        obj.data.uv_layers.active.name = context.active_object.data.uv_layers.active.name
+ 
         elif action == "new":
             for ob in context.selected_objects:
                 if ob.type == "MESH":
@@ -77,6 +130,7 @@ class Duckx_OT_ActiveUVMap(Operator):
                                 ob.data.uv_layers.remove(uv_layer)
                                 break
             pass
+        
         obj = bpy.context.active_object
         bpy.data.objects[obj.name].select_set(True)
         return {'FINISHED'}

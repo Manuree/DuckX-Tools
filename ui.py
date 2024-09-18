@@ -43,19 +43,60 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
 
         layout = self.layout
         
-        if duckx_tools.object_name == True:
+        #Object Info
+        if duckx_tools.object_name or duckx_tools.mesh_name or duckx_tools.uvmaps or duckx_tools.custom_props :
             if active_object:
                 if active_object.type == 'MESH':
                     box = layout.box()
                     col = box.column()
                     row = col.row()
-                    row.label(text="", icon="OUTLINER_OB_MESH")
-                    row.prop(active_object, "name", text="")
-                    row = col.row()
-                    row.label(text="", icon="OUTLINER_DATA_MESH")
-                    row.prop(active_object.data, "name", text="")
+                    if duckx_tools.object_name == True:
+                        row.label(text="", icon="OUTLINER_OB_MESH")
+                        row.prop(active_object, "name", text="")
+                        row = col.row()
+
+                    if duckx_tools.mesh_name == True:
+                        row.label(text="", icon="OUTLINER_DATA_MESH")
+                        row.prop(active_object.data, "name", text="")
+                        row = col.row(align=True)
+                        
+                    uv_maps = active_object.data.uv_layers
+                    if duckx_tools.uvmaps == True:
+                        if uv_maps:
+                            for i, uv_map in enumerate(uv_maps):
+                                if len(active_object.data.uv_layers) >= 4:
+                                    if active_object.data.uv_layers.active == uv_map:
+                                        row.operator("duckx_tools.active_uv_map_operator", text=str(i), depress=True).action = "duckx_uvset:>" + str(i) + ":>" + uv_map.name
+                                    else:
+                                        row.operator("duckx_tools.active_uv_map_operator", text=str(i)).action = "duckx_uvset:>" + str(i) + ":>" + uv_map.name
+                                else:
+                                    if active_object.data.uv_layers.active == uv_map:
+                                        row.operator("duckx_tools.active_uv_map_operator", text=uv_map.name, depress=True).action = "duckx_uvset:>" + str(i) + ":>" + uv_map.name
+                                    else:
+                                        row.operator("duckx_tools.active_uv_map_operator", text=uv_map.name).action = "duckx_uvset:>" + str(i) + ":>" + uv_map.name
+                            row = col.row(align=True)
+                        else:
+                            row.operator("duckx_tools.active_uv_map_operator", text="New UV Map").action = "new"
+                            row = col.row(align=True)
+                    
+                    if duckx_tools.custom_props == True:
+                        if active_object.keys():
+                            row.scale_y = 0.7
+                            row.label(text="Custom Properties :")
+                            if duckx_tools.filter_props != "":
+                                for key in active_object.keys():
+                                    if key in duckx_tools.filter_props:
+                                        row = col.row()
+                                        row.scale_y = 0.7
+                                        row.active = False
+                                        row.label(text=key + " : " + str(active_object[key]))
+                            else:
+                                for key in active_object.keys():
+                                    row = col.row()
+                                    row.scale_y = 0.7
+                                    row.active = False
+                                    row.label(text=key + " : " + str(active_object[key]))
             
-        
         if duckx_tools.tri_count == True:
             row = layout.row()
             row.alignment = 'LEFT'
@@ -96,25 +137,25 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 row.operator("duckx_tools.tri_tracker_operator", text="Triangles Tracker", icon="SHADING_BBOX")
                 row = layout.row()
         
-        if duckx_tools.uvmap_active == True:
-            row = layout.row()
-            if selected_objects:
-                try:
-                    if active_object.type == 'MESH' and len(selected_objects) != 0:
-                        uvmaps = active_object.data.uv_layers
-                        for uvmap in uvmaps:
-                            if active_object.data.uv_layers.active.name == uvmap.name:
-                                row.prop(uvmap, "name", text="")
-                                row.prop(uvmap, "active_render", text="", icon="RESTRICT_RENDER_OFF")
-                                row.operator("duckx_tools.active_uv_map_operator", text="", icon="FILE_REFRESH").action = "toggle"
-                                row = layout.row()
-                except:
-                    print("No active Object")
-
-        row.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="STICKY_UVS_VERT")
+        # if duckx_tools.uvmap_active == True:
+        #     row = layout.row()
+        #     if selected_objects:
+        #         try:
+        #             if active_object.type == 'MESH' and len(selected_objects) != 0:
+        #                 uvmaps = active_object.data.uv_layers
+        #                 for uvmap in uvmaps:
+        #                     if active_object.data.uv_layers.active.name == uvmap.name:
+        #                         row.prop(uvmap, "name", text="")
+        #                         row.prop(uvmap, "active_render", text="", icon="RESTRICT_RENDER_OFF")
+        #                         row.operator("duckx_tools.active_uv_map_operator", text="", icon="FILE_REFRESH").action = "toggle"
+        #                         row = layout.row()
+        #         except:
+        #             print("No active Object")
+        layout.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="STICKY_UVS_VERT")
         if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
             row.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINKED")
 
+        #row = layout.row()
         row = layout.row(align=True) # Create a row with alignment
         row.alignment = "CENTER"
         row.prop(duckx_tools, "tabs_menu", text="", expand=True) # Tabs, no expand
@@ -240,7 +281,8 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 row.label(text="Color")
                 row = box.row()
                 row.scale_x = 0.5
-                row.prop(context.object, "color", text="")
+                if active_object:
+                    row.prop(context.object, "color", text="")
                 row.operator("duckx_tools.object_colors", text="", icon="TRIA_RIGHT").action = "pick"
                 row.prop(duckx_tools, "obj_color", text="")
                 row.scale_x = 2
@@ -324,7 +366,6 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             obj = bpy.context.active_object
             selected_objects = bpy.context.selected_objects
             if selected_objects:
-                print(obj)
                 if obj:
                     if obj.type == 'MESH':
                         uvmaps = obj.data.uv_layers
@@ -361,7 +402,9 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             col = box.column(heading="Object Info", align=True)
             col.prop(duckx_tools, "object_name")
             col.prop(duckx_tools, "mesh_name")
+            col.prop(duckx_tools, "uvmaps")
             col.prop(duckx_tools, "custom_props")
+            col.prop(duckx_tools, "filter_props", text="Filter")
             box = layout.box()
             col = box.column(heading="", align=True)
             col.prop(duckx_tools, "show_hide_panel")
