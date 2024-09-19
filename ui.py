@@ -151,7 +151,8 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
         #                         row = layout.row()
         #         except:
         #             print("No active Object")
-        layout.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="STICKY_UVS_VERT")
+        row = layout.row()
+        row.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="STICKY_UVS_VERT")
         if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
             row.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINKED")
 
