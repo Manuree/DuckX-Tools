@@ -398,11 +398,18 @@ class Duckx_OT_ScaleFromActive(Operator):
         return context.mode == 'EDIT_MESH'
     
     def execute(self, context):
+        pivot = bpy.context.scene.tool_settings.transform_pivot_point
+        orient = bpy.context.scene.transform_orientation_slots[0].type
+
+        
+        
         bpy.context.scene.tool_settings.transform_pivot_point = 'ACTIVE_ELEMENT'
         bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
         bpy.ops.mesh.select_prev_item()
         
         
+        bpy.context.scene.transform_orientation_slots[0].type = orient
+        bpy.context.scene.tool_settings.transform_pivot_point = pivot
 
         return {'FINISHED'}
 
@@ -681,6 +688,8 @@ class Duckx_OT_Utilities(Operator):
         duckx_tools = scene.duckx_tools
         
         if action == "Scale 0":
+            pivot = bpy.context.scene.tool_settings.transform_pivot_point
+            orient = bpy.context.scene.transform_orientation_slots[0].type
             if not context.area.type == 'IMAGE_EDITOR':
                 bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
                 bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
@@ -690,6 +699,8 @@ class Duckx_OT_Utilities(Operator):
             else:
                 bpy.ops.transform.resize(value=(0, 0, 0), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='RANDOM', proportional_size=0.122846, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'FACE'}, use_snap_project=False, snap_target='CENTER', use_snap_self=True, use_snap_edit=True, use_snap_nonedit=True, use_snap_selectable=False)
                 bpy.ops.uv.weld()
+            bpy.context.scene.tool_settings.transform_pivot_point = pivot
+            bpy.context.scene.transform_orientation_slots[0].type = orient
         
         elif action == "Origin to selection":
             bpy.ops.view3d.snap_cursor_to_selected()
