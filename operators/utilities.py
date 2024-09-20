@@ -618,8 +618,8 @@ class Duckx_OT_MoveVertexToActive(Operator):
                 new_loc = vertex_list[i].co - vertex_list[i-1].co
                 print(f"To Index: {new_loc}")
                 orient = bpy.context.scene.transform_orientation_slots[0].type 
-                bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
-                bpy.ops.transform.translate(value=(new_loc), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL')
+                bpy.context.scene.transform_orientation_slots[0].type = 'LOCAL'
+                bpy.ops.transform.translate(value=(new_loc), orient_type='LOCAL')
                 bpy.ops.mesh.select_all(action='DESELECT')
                 bpy.context.scene.transform_orientation_slots[0].type = orient
         for vertex in vertex_list:
