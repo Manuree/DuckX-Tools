@@ -280,7 +280,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 
             else:
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "movex_tools"
-                row.label(text="Transfrom Tools")
+                row.label(text="Align")
 
             #Shape Tools
             box = layout.box()

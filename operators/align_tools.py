@@ -65,13 +65,13 @@ class Duckx_OT_AlignToActive(Operator):
             bpy.ops.transform.resize(value=(1, 1, 0))
         else:
             try:
-                bpy.ops.transform.resize(value=b)
+                bpy.ops.transform.resize(value=a)
                 bpy.ops.mesh.select_all(action='DESELECT')
                 vertex_list[1].select = True
                 bm.select_history.clear()  # เคลียร์ประวัติการเลือกก่อนหน้า
                 bm.select_history.add(vertex_list[0])
                 vertex_list[0].select = True
-                bpy.ops.transform.resize(value=a)
+                bpy.ops.transform.resize(value=b)
                 bpy.ops.mesh.merge(type='CENTER')
             except:
                 pass
