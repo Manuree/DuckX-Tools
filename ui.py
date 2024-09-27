@@ -152,7 +152,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
         #         except:
         #             print("No active Object")
         row = layout.row()
-        row.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="STICKY_UVS_VERT")
+        row.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="UV")
         if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
             row.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINKED")
 
@@ -592,13 +592,23 @@ class DuckXMenu(Menu):
         layout.separator()
         layout.operator("duckx_tools.console_command_operator", text="Console", icon="CONSOLE")
 
+
+def draw_duckx_operator(self, context):
+    layout = self.layout
+    if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
+        layout.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="", icon="SEQUENCE_COLOR_04")
+    else:
+        layout.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="", icon="SEQUENCE_COLOR_09")
+    layout.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINK_BLEND")
+
 classes = [VIEW3D_PT_Duckx_MainPanel, VIEW3D_PT_TriangleMenu, VIEW3D_PT_DecalsTools, VIEW3D_PT_ShowHide, DuckXMenu]
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
+    bpy.types.VIEW3D_HT_tool_header.append(draw_duckx_operator)
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    bpy.types.VIEW3D_HT_tool_header.remove(draw_duckx_operator)
