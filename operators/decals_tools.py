@@ -114,6 +114,12 @@ class Duckx_OT_DecalRing(Operator):
 
         for face in faces_a:
             face.select = True
+            
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
+        bpy.ops.mesh.mark_sharp()
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
+        bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
+
         
         #Create Ring
         bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((0, 0, 0), (0, 0, 0), (0, 0, 0)), "orient_matrix_type":'GLOBAL'})
