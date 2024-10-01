@@ -19,7 +19,7 @@ class Duckx_OT_DecalRing(Operator):
     decalAxis : EnumProperty(name="Axis", items=[("X", "X", "", "SEQUENCE_COLOR_01", 1), ("Y", "Y", "", "SEQUENCE_COLOR_04", 2), ("Z", "Z", "", "SEQUENCE_COLOR_05", 3)])
     orient : IntProperty(name="Orient Index", default=0, min=0)
     offset : FloatProperty(name="Offset", default=0.002, precision=5, step=0.0010)
-    height : FloatProperty(name="Height", default=0.2)
+    height : FloatProperty(name="Height", default=0.126)
     uv_position : FloatVectorProperty(name="UV Position : ", subtype="XYZ")
     @classmethod
     def poll(cls, context):
