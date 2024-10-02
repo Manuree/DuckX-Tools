@@ -691,13 +691,12 @@ class Duckx_OT_Utilities(Operator):
             pivot = bpy.context.scene.tool_settings.transform_pivot_point
             orient = bpy.context.scene.transform_orientation_slots[0].type
             if not context.area.type == 'IMAGE_EDITOR':
-                bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
-                bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
-                bpy.ops.transform.resize(value=(0, 0, 0), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='RANDOM', proportional_size=0.122846, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'FACE'}, use_snap_project=False, snap_target='CENTER', use_snap_self=True, use_snap_edit=True, use_snap_nonedit=True, use_snap_selectable=False)
-                bpy.ops.mesh.merge(type='CENTER')
                 bpy.context.scene.tool_settings.transform_pivot_point = 'BOUNDING_BOX_CENTER'
+                bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
+                bpy.ops.transform.resize(value=(0, 0, 0))
+                bpy.ops.mesh.merge(type='CENTER')
             else:
-                bpy.ops.transform.resize(value=(0, 0, 0), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='RANDOM', proportional_size=0.122846, use_proportional_connected=False, use_proportional_projected=False, snap=False, snap_elements={'FACE'}, use_snap_project=False, snap_target='CENTER', use_snap_self=True, use_snap_edit=True, use_snap_nonedit=True, use_snap_selectable=False)
+                bpy.ops.transform.resize(value=(0, 0, 0))
                 bpy.ops.uv.weld()
             bpy.context.scene.tool_settings.transform_pivot_point = pivot
             bpy.context.scene.transform_orientation_slots[0].type = orient
