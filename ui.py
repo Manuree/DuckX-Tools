@@ -500,6 +500,9 @@ class VIEW3D_PT_DecalsTools(Panel):
         row.operator("duckx_tools.decal_ring_operator", text="", icon_value=icon_reg.iconLib("giz_X")).decalAxis = "X"
         row.operator("duckx_tools.decal_ring_operator", text="", icon_value=icon_reg.iconLib("giz_Y")).decalAxis = "Y"
         row.operator("duckx_tools.decal_ring_operator", text="", icon_value=icon_reg.iconLib("giz_Z")).decalAxis = "Z"
+        row = box.row(align=True)
+        row.operator("duckx_tools.uv_position_random_operator", text="Random X").action = "x"
+        row.operator("duckx_tools.uv_position_random_operator", text="Random Y").action = "y"
         
             
         

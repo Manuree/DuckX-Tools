@@ -4,6 +4,7 @@ from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVecto
 
 from . import func_core
 import math
+import random
 
 class Duckx_OT_ActiveUVMap(Operator):
     bl_idname = "duckx_tools.active_uv_map_operator"
@@ -294,6 +295,36 @@ class Duckx_OT_UvUnwarpHere(Operator):
                 
         bpy.ops.uv.snap_selected(target='CURSOR_OFFSET')
         return {'FINISHED'}
+    
+class Duckx_OT_UVPositionRandom(Operator):
+    bl_idname = "duckx_tools.uv_position_random_operator"
+    bl_label = "UV Random Position"
+    bl_icon = "UV"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Random UV Position"
+
+    action : EnumProperty(
+        name = "Property",
+        items = [('x', "X", ""),
+                 ('y', "Y", "")
+                 ]
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'EDIT_MESH' and context.tool_settings.mesh_select_mode[2]
+    
+    def execute(self, context):
+        if self.action == "x":
+            #bpy.ops.uv.randomize_uv_transform(loc=(1, 0))
+            func_core.move_selected_uv(random.uniform(-1, 1), 0)
+        elif self.action == "y":
+            func_core.move_selected_uv(0, random.uniform(-1, 1))
+            #bpy.ops.uv.randomize_uv_transform(loc=(0, 1))
+                
+        return {'FINISHED'}
 
 
     
@@ -302,6 +333,7 @@ def register():
     bpy.utils.register_class(Duckx_OT_UvRotation)
     bpy.utils.register_class(Duckx_OT_UVPadding)
     bpy.utils.register_class(Duckx_OT_UvUnwarpHere)
+    bpy.utils.register_class(Duckx_OT_UVPositionRandom)
         
     
 def unregister():
@@ -309,3 +341,4 @@ def unregister():
     bpy.utils.unregister_class(Duckx_OT_UvRotation)
     bpy.utils.unregister_class(Duckx_OT_UVPadding)
     bpy.utils.unregister_class(Duckx_OT_UvUnwarpHere)
+    bpy.utils.unregister_class(Duckx_OT_UVPositionRandom)

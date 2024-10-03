@@ -184,6 +184,9 @@ class Duckx_OT_DecalRing(Operator):
         #Unwarp UV
         bpy.ops.uv.unwrap(method='ANGLE_BASED')
         func_core.move_selected_uv_island(2, 0.5)
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
+        bpy.ops.mesh.mark_sharp()
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='FACE')
 
         bmesh.update_edit_mesh(me)
 
