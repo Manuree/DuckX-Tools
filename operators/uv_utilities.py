@@ -303,7 +303,7 @@ class Duckx_OT_UVPositionRandom(Operator):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Random UV Position"
+    bl_description = "Random UV Island Position, Shift Click for Random selected only"
 
     action : EnumProperty(
         name = "Property",
@@ -311,17 +311,32 @@ class Duckx_OT_UVPositionRandom(Operator):
                  ('y', "Y", "")
                  ]
     )
+    islands = True
 
     @classmethod
     def poll(cls, context):
         return context.mode == 'EDIT_MESH' and context.tool_settings.mesh_select_mode[2]
     
+    def invoke(self, context, event):
+        if event.shift:
+            self.islands = False
+            return self.execute(context)
+        else:
+            return self.execute(context)
+    
     def execute(self, context):
+        x, y = func_core.get_active_uv_island_position()
         if self.action == "x":
             #bpy.ops.uv.randomize_uv_transform(loc=(1, 0))
-            func_core.move_selected_uv(random.uniform(-1, 1), 0)
+            if not self.islands:
+                func_core.move_selected_uv(random.uniform(-1, 1), 0)
+            else:
+                func_core.move_selected_uv_island(random.uniform(-1, 1), y)
         elif self.action == "y":
-            func_core.move_selected_uv(0, random.uniform(-1, 1))
+            if not self.islands:
+                func_core.move_selected_uv(x, random.uniform(-1, 1))
+            else:
+                func_core.move_selected_uv_island(x, random.uniform(-1, 1))
             #bpy.ops.uv.randomize_uv_transform(loc=(0, 1))
                 
         return {'FINISHED'}
