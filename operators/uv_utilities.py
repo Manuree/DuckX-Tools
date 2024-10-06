@@ -9,7 +9,7 @@ import random
 class Duckx_OT_ActiveUVMap(Operator):
     bl_idname = "duckx_tools.active_uv_map_operator"
     bl_label = "UV Map"
-    bl_description = "SHIFT CLICK for rename, CTRL CLICK for New, ALT CLICK for remove UV Map"
+    bl_description = "CLICK for Active UVMaps \nSHIFT CLICK for rename \nCTRL CLICK for New \nALT CLICK for remove UV Map"
 
     action : StringProperty(name="Action")
     edit = False
@@ -143,7 +143,7 @@ class Duckx_OT_UvRotation(Operator):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Rotation UV / Hold Shift for rotate from selected face"
+    bl_description = "Rotation UV \nSHIFT CLICK for rotate from selected face"
 
     angle : FloatProperty(name="Angle")
     islands = True
@@ -303,7 +303,7 @@ class Duckx_OT_UVPositionRandom(Operator):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Random UV Island Position, Shift Click for Random selected only"
+    bl_description = "Random UV Island Position \nSHIFT CLICK for Random selected only"
 
     action : EnumProperty(
         name = "Property",
