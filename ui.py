@@ -32,6 +32,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
         row.label(text="", icon_value=icon_reg.iconLib("logo_U"))
         row.label(text="", icon_value=icon_reg.iconLib("logo_C"))
         row.label(text="", icon_value=icon_reg.iconLib("logo_K"))
+        row.label(text="", icon_value=icon_reg.iconLib("logo_X"))
         #layout.label(text="Tools")
         
 
