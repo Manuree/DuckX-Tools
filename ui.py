@@ -27,7 +27,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
 
         layout = self.layout
         row = layout.row(align=True)
-        row.scale_x = 0.85
+        row.scale_x = 0.885
         row.label(text="", icon_value=icon_reg.iconLib("logo_D"))
         row.label(text="", icon_value=icon_reg.iconLib("logo_U"))
         row.label(text="", icon_value=icon_reg.iconLib("logo_C"))
@@ -456,6 +456,8 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             row = box.row()
             row.operator("duckx_tools.duckx_keymap_operator", text="Add").action = "add"
             row.operator("duckx_tools.duckx_keymap_operator", text="Remove").action = "remove"
+            row = layout.row()
+            row.template_icon(icon_reg.iconLib("duckx_symbol_type_frame_bg"), scale=5)
         
 class VIEW3D_PT_TriangleMenu(Panel):
     bl_label = "Triangle"
