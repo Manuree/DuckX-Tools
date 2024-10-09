@@ -14,6 +14,7 @@ class Duckx_OT_ActiveUVMap(Operator):
     action : StringProperty(name="Action")
     edit = False
     
+    
     @classmethod
     def poll(cls, context):
         selected_objects = context.selected_objects
@@ -44,11 +45,12 @@ class Duckx_OT_ActiveUVMap(Operator):
             wm = context.window_manager
             return wm.invoke_props_dialog(self)
         elif event.alt and "duckx_uvset:>" in self.action:
-            for obj in objs:
-                if obj.type == "MESH":
-                    for uv_layer in obj.data.uv_layers:
-                        if uv_layer.name == parts[2]:
-                            obj.data.uv_layers.remove(uv_layer)
+            bpy.ops.duckx_tools.delete_uvmap_operator('INVOKE_DEFAULT', action=self.action)
+            # for obj in objs:
+            #     if obj.type == "MESH":
+            #         for uv_layer in obj.data.uv_layers:
+            #             if uv_layer.name == parts[2]:
+            #                 obj.data.uv_layers.remove(uv_layer)
             return self.execute(context)
         elif event.ctrl and "duckx_uvset:>" in self.action:
             self.action = "new"
@@ -134,6 +136,28 @@ class Duckx_OT_ActiveUVMap(Operator):
         
         obj = bpy.context.active_object
         bpy.data.objects[obj.name].select_set(True)
+        return {'FINISHED'}
+    
+class Duckx_OT_DeleteUVMap(bpy.types.Operator):
+    bl_idname = "duckx_tools.delete_uvmap_operator"
+    bl_label = "Delele UV Map"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    action : StringProperty(name="Action")
+
+    def invoke(self, context, event):
+        # เรียก popup ยืนยัน
+        return context.window_manager.invoke_confirm(self, event)
+    
+    def execute(self, context):
+        print("ddddddddd")
+        parts = self.action.split(':>')
+        objs = context.selected_objects
+        for obj in objs:
+            if obj.type == "MESH":
+                for uv_layer in obj.data.uv_layers:
+                    if uv_layer.name == parts[2]:
+                        obj.data.uv_layers.remove(uv_layer)
         return {'FINISHED'}
     
 class Duckx_OT_UvRotation(Operator):
@@ -345,6 +369,7 @@ class Duckx_OT_UVPositionRandom(Operator):
     
 def register():
     bpy.utils.register_class(Duckx_OT_ActiveUVMap)
+    bpy.utils.register_class(Duckx_OT_DeleteUVMap)
     bpy.utils.register_class(Duckx_OT_UvRotation)
     bpy.utils.register_class(Duckx_OT_UVPadding)
     bpy.utils.register_class(Duckx_OT_UvUnwarpHere)
@@ -353,6 +378,7 @@ def register():
     
 def unregister():
     bpy.utils.unregister_class(Duckx_OT_ActiveUVMap)
+    bpy.utils.unregister_class(Duckx_OT_DeleteUVMap)
     bpy.utils.unregister_class(Duckx_OT_UvRotation)
     bpy.utils.unregister_class(Duckx_OT_UVPadding)
     bpy.utils.unregister_class(Duckx_OT_UvUnwarpHere)
