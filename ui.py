@@ -139,20 +139,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 row.operator("duckx_tools.tri_tracker_operator", text="Triangles Tracker", icon="SHADING_BBOX")
                 row = layout.row()
         
-        # if duckx_tools.uvmap_active == True:
-        #     row = layout.row()
-        #     if selected_objects:
-        #         try:
-        #             if active_object.type == 'MESH' and len(selected_objects) != 0:
-        #                 uvmaps = active_object.data.uv_layers
-        #                 for uvmap in uvmaps:
-        #                     if active_object.data.uv_layers.active.name == uvmap.name:
-        #                         row.prop(uvmap, "name", text="")
-        #                         row.prop(uvmap, "active_render", text="", icon="RESTRICT_RENDER_OFF")
-        #                         row.operator("duckx_tools.active_uv_map_operator", text="", icon="FILE_REFRESH").action = "toggle"
-        #                         row = layout.row()
-        #         except:
-        #             print("No active Object")
+
         row = layout.row()
         row.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="UV")
         if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
@@ -426,6 +413,81 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             row = box.row()
             row.operator("duckx_tools.uvrotation_operator", text="Delete")
         
+        #Macro
+        if duckx_tools.tabs_menu == "macro":
+            layout = self.layout
+            row = layout.row()
+            row.label(text="Macro :")
+            
+            #Select from Index
+            box = layout.box()
+            row = box.row()
+            if duckx_tools.select_mesh_from_index != False:
+                row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_DOWN").prop_name = "select_mesh_from_index"
+                row.label(text="Select from index")
+                col = box.column(align=True)
+                row = col.row(align=True)
+                row.prop(duckx_tools, "select_type", expand=True)
+                col.prop(duckx_tools, "select_index_number")
+                row = box.row(align=True)
+                row.operator("duckx_tools.select_from_index_operator", text="Select")
+            else:
+                row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "select_mesh_from_index"
+                row.label(text="Select from index")
+            
+            #Run Script
+            box = layout.box()
+            row = box.row()
+            if duckx_tools.run_script != False:
+                row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_DOWN").prop_name = "run_script"
+                row.label(text="Run Script")
+                col = box.column(align=True)
+                texts = bpy.data.texts
+                for text in texts:
+                    col.operator("duckx_tools.run_script_operator", text=text.name).file_name = text.name
+            else:
+                row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_RIGHT").prop_name = "run_script"
+                row.label(text="Run Script")
+
+        #File and Render
+        if duckx_tools.tabs_menu == "file_render":
+            layout = self.layout
+            row = layout.row()
+            row.label(text="File and Render :")
+            box = layout.box()
+            row = box.row()
+            row.label(text="Collection Export")
+            row = box.row()
+            row.prop(duckx_tools, "export_path", text="")
+            row = box.row()
+            row.operator("duckx_tools.collection_export_operator", text="Add").action = "add_data"
+            row.operator("duckx_tools.collection_export_operator", text="Remove").action = "remove_data"
+            row.operator("duckx_tools.collection_export_operator", text="Export").action = "export"
+
+            active_collection = bpy.context.view_layer.active_layer_collection
+            collection_name = active_collection.name
+            export_data = func_core.get_collection_custom_property(collection_name, "Duckx Export Data")
+            if not export_data is None:
+                col = box.column(align=True)
+                row = col.row()
+                col.label(text="Export Data")
+                row = col.row()
+                row.label(icon=func_core.get_collection_icon_by_color_tag(collection_name))
+                row.label(text=collection_name)
+                row = col.row()
+                row.alignment = "LEFT"
+                row.active = False
+                row.label(icon="BLANK1")
+                export_data = func_core.string_to_list(export_data)
+                row.label(text="File :")
+                row.label(text=export_data[0])
+                row = col.row()
+                row.alignment = "LEFT"
+                row.active = False
+                row.label(icon="BLANK1")
+                row.label(text="Path :")
+                row.label(text=export_data[1])
+
         #Setting Tab
         elif duckx_tools.tabs_menu == "setting":
             row = layout.row()

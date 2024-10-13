@@ -15,7 +15,7 @@ class MyProperties(PropertyGroup):
                  ('anim', "Animetion", "Tools for Animation", "ARMATURE_DATA", 3),
                  ('macro', "Macro", "Macro Tools", "SEQ_STRIP_META", 4),
                  ('view', "View", "Tools for view and display", "WORKSPACE", 5),
-                 ('render', "Render", "Tools for Render", "OUTPUT", 6),
+                 ('file_render', "File and Render", "Tools for File and Render", "OUTPUT", 6),
                  ('setting', "Setting", "Addon setting", "PREFERENCES", 7)
                  ]
     )
@@ -40,6 +40,8 @@ class MyProperties(PropertyGroup):
     movex_tools : BoolProperty(name="Merge Tools Toggle", default=False)
     groups_panel : BoolProperty(name="Groups Panel", default=True)
     decals_panel : BoolProperty(name="Decals Panel", default=False)
+    select_mesh_from_index : BoolProperty(name="Select from index", default=False)
+    run_script : BoolProperty(name="Run Script", default=False)
 
     obj_color : FloatVectorProperty(name="Color", subtype='COLOR', size=4, min=0, max=1, default=(0.0, 0.0, 0.0, 1.0),)
     name_to_mesh : BoolProperty(name="Mesh Data Name Tools Toggle", default=True)
@@ -69,6 +71,19 @@ class MyProperties(PropertyGroup):
     #Decals Tools
     decal_ring_set : BoolProperty(name="Ring Decal Setting", default=False)
     decal_ring_mat : PointerProperty(type=bpy.types.Material, description="Material Assign to Ring Decal")
+
+    #Export
+    export_path : StringProperty(name="File Path", subtype='FILE_PATH')
+
+    #Select from index
+    select_type : EnumProperty(
+        name = "Select Type",
+        items = [('vertex', "Vertex", ""),
+                 ('edge', "Edge", ""),
+                 ('face', "Face", "")
+                 ]
+    )
+    select_index_number : IntProperty(name="Index", default=0, min=0)
 
 classes = [MyProperties]
 def register():

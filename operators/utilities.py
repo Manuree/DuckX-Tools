@@ -748,6 +748,21 @@ class Duckx_OT_Utilities(Operator):
 
         return {'FINISHED'}
     
+class Duckx_OT_RunScript(Operator):
+    bl_idname = "duckx_tools.run_script_operator"
+    bl_label = "Run Script"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Run Script"
+
+    file_name : StringProperty(name="File")
+
+    def execute(self, context):
+        text_block = bpy.data.texts.get(self.file_name)
+        exec(text_block.as_string())
+        return {'FINISHED'}
+    
 class Duckx_OT_ConsoleCommand(Operator):
     bl_idname = "duckx_tools.console_command_operator"
     bl_label = "Console Command"
@@ -768,6 +783,10 @@ class Duckx_OT_ConsoleCommand(Operator):
 
         else:
             self.report({"INFO"} ,"Wrong Command")
+            
+            
+
+
         return {'FINISHED'}
     
     def invoke(self, context, event):
@@ -779,7 +798,7 @@ class Duckx_OT_ConsoleCommand(Operator):
     
 classes = [Duckx_OT_ToggleProp, Duckx_OT_ConvexTools, Duckx_OT_BoxFromMesh, Duckx_OT_MeshToBox,
            Duckx_OT_MoveXTools, Duckx_OT_ScaleFromActive, Duckx_OT_RemoveLoopRing, Duckx_OT_InvertSeam,
-           Duckx_OT_InvertInLooseParts, Duckx_OT_SelectByDistance,
+           Duckx_OT_InvertInLooseParts, Duckx_OT_SelectByDistance, Duckx_OT_RunScript,
            Duckx_OT_MoveVertexToActive, Duckx_OT_Utilities, Duckx_OT_ConsoleCommand]
     
 def register():

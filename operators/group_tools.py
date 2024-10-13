@@ -130,6 +130,8 @@ class Duckx_OT_GroupTools(Operator):
                 func_core.select_objects_in_collection(collection_name)
                 func_core.focus_object_in_outliner()
             else:
+                for coll in bpy.data.collections:
+                    func_core.hide_collection(coll.name, False)
                 objs = group_lib[duckx_tools.tab_active][1][index][1]
                 print(objs)
                 
@@ -141,8 +143,7 @@ class Duckx_OT_GroupTools(Operator):
                 if self.hide_all:
                     bpy.ops.object.select_all(action='SELECT')
                     bpy.ops.object.hide_view_set(unselected=False)
-                    
-                
+
                 for name in objs:
                     if name in bpy.data.objects:
                         obj = bpy.data.objects.get(name)
@@ -153,7 +154,7 @@ class Duckx_OT_GroupTools(Operator):
                             obj.hide_set(False)
                     else:
                         print(name + " is gone")
-    
+
                 bpy.ops.object.select_all(action='DESELECT')
                 if self.select:
                     func_core.select_objects_by_name(objs)

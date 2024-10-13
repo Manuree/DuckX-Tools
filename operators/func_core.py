@@ -286,6 +286,36 @@ def get_hierarchy_collections(collection):
 
     return collections_list
 
+def get_collection_custom_property(collection_name, property_name):
+    collection = bpy.data.collections.get(collection_name)
+    if collection is None:
+        return None
+
+    return collection.get(property_name)
+
+def get_collection_icon_by_color_tag(collection_name):
+    collection = bpy.data.collections.get(collection_name)
+    if collection is None:
+        return 'OUTLINER_COLLECTION'
+    if collection.color_tag == 'COLOR_01':
+        return 'COLLECTION_COLOR_01'
+    elif collection.color_tag == 'COLOR_02':
+        return 'COLLECTION_COLOR_02'
+    elif collection.color_tag == 'COLOR_03':
+        return 'COLLECTION_COLOR_03'
+    elif collection.color_tag == 'COLOR_04':
+        return 'COLLECTION_COLOR_04'
+    elif collection.color_tag == 'COLOR_05':
+        return 'COLLECTION_COLOR_05'
+    elif collection.color_tag == 'COLOR_06':
+        return 'COLLECTION_COLOR_06'
+    elif collection.color_tag == 'COLOR_07':
+        return 'COLLECTION_COLOR_07'
+    elif collection.color_tag == 'COLOR_08':
+        return 'COLLECTION_COLOR_08'
+    else:
+        return 'OUTLINER_COLLECTION'  # Default icon หากไม่มีสี
+
 def select_objects_in_collection(collection_name):
     # ตรวจสอบว่ามีคอลเลคชันชื่อนั้นหรือไม่
     collection = bpy.data.collections.get(collection_name)
@@ -394,6 +424,70 @@ def select_face_by_size(size=""):
         
         bmesh.update_edit_mesh(obj.data)
     #bpy.ops.object.mode_set(mode='OBJECT')
+
+
+def select_face_by_index(obj, face_index):
+    if obj.type != 'MESH':
+        print(f"{obj.name} is not a mesh object")
+        return
+    bpy.ops.object.mode_set(mode='OBJECT')
+    mesh = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bm.faces.ensure_lookup_table()
+    for face in bm.faces:
+        face.select = False
+    if face_index < len(bm.faces):
+        bm.faces[face_index].select = True
+        print(f"Selected face index: {face_index}")
+    else:
+        print(f"Face index {face_index} out of range")
+    
+    bm.to_mesh(mesh)
+    bm.free()
+    bpy.ops.object.mode_set(mode='EDIT')
+
+def select_vertex_by_index(obj, vertex_index):
+    if obj.type != 'MESH':
+        print(f"{obj.name} is not a mesh object")
+        return
+    bpy.ops.object.mode_set(mode='OBJECT')
+    mesh = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bm.verts.ensure_lookup_table()
+    for vex in bm.verts:
+        vex.select = False
+    if vertex_index < len(bm.verts):
+        bm.verts[vertex_index].select = True
+        print(f"Selected face index: {vertex_index}")
+    else:
+        print(f"Face index {vertex_index} out of range")
+    
+    bm.to_mesh(mesh)
+    bm.free()
+    bpy.ops.object.mode_set(mode='EDIT')
+
+def select_edge_by_index(obj, edge_index):
+    if obj.type != 'MESH':
+        print(f"{obj.name} is not a mesh object")
+        return
+    bpy.ops.object.mode_set(mode='OBJECT')
+    mesh = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bm.edges.ensure_lookup_table()
+    for edge in bm.edges:
+        edge.select = False
+    if edge_index < len(bm.edges):
+        bm.edges[edge_index].select = True
+        print(f"Selected face index: {edge_index}")
+    else:
+        print(f"Face index {edge_index} out of range")
+    
+    bm.to_mesh(mesh)
+    bm.free()
+    bpy.ops.object.mode_set(mode='EDIT')
 
 addon_version=""
 def get_addon_version():
