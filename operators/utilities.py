@@ -5,6 +5,9 @@ from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVecto
 
 from . import func_core
 
+import urllib.request
+import json
+
 class Duckx_OT_ToggleProp(Operator):
     bl_idname = "duckx_tools.toggle_prop_operator"
     bl_label = "Toggle"
@@ -761,14 +764,10 @@ class Duckx_OT_ConsoleCommand(Operator):
         duckx_tools = scene.duckx_tools
         
         if cc == "test":
-            duckx_tools.group_lib = "[]"
-            print(f"Clear group_lib {duckx_tools.group_lib}")
+            pass
 
         else:
             self.report({"INFO"} ,"Wrong Command")
-            group_lib = func_core.string_to_list(duckx_tools.group_lib)
-            print(group_lib)
-            print(f"Group Active {duckx_tools.tab_active}")
         return {'FINISHED'}
     
     def invoke(self, context, event):
