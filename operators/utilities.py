@@ -757,14 +757,18 @@ class Duckx_OT_ConsoleCommand(Operator):
     cc : StringProperty(name="Command")
     def execute(self, context):
         cc = self.cc
+        scene = context.scene
+        duckx_tools = scene.duckx_tools
         
         if cc == "test":
-            view = bpy.context.scene.view_layers['View Layer']
-            stats = bpy.context.scene.statistics(view) #returns string
-            print(stats)
+            duckx_tools.group_lib = "[]"
+            print(f"Clear group_lib {duckx_tools.group_lib}")
 
         else:
             self.report({"INFO"} ,"Wrong Command")
+            group_lib = func_core.string_to_list(duckx_tools.group_lib)
+            print(group_lib)
+            print(f"Group Active {duckx_tools.tab_active}")
         return {'FINISHED'}
     
     def invoke(self, context, event):

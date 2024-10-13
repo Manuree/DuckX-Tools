@@ -5,6 +5,7 @@ from . import icon_reg
 from . import properties
 from . import setting
 from .operators import func_core
+from .operators import group_tools
 from .operators import triangles_tools
 
 
@@ -438,7 +439,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             col.prop(duckx_tools, "filter_props", text="Filter")
             box = layout.box()
             col = box.column(heading="", align=True)
-            col.prop(duckx_tools, "show_hide_panel")
+            col.prop(duckx_tools, "groups_panel")
             col.prop(duckx_tools, "decals_panel")
             box = layout.box()
             col = box.column(heading="Triangles", align=True)
@@ -459,22 +460,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             row = layout.row()
             row.template_icon(icon_reg.iconLib("duckx_symbol_type_frame_bg"), scale=5)
         
-class VIEW3D_PT_TriangleMenu(Panel):
-    bl_label = "Triangle"
-    bl_idname = "VIEW3D_PT_triangle_menu"
-    bl_options = {'INSTANCED'}
-    bl_space_type = 'VIEW_3D' 
-    bl_region_type = 'WINDOW'
-
-    def draw(self, context):
-        scene = context.scene
-        duckx_tools = scene.duckx_tools        
-
-        layout = self.layout
-        row = layout.row()
-        row.label(text = str(func_core.selectedObjectsVex()))
-
-class VIEW3D_PT_DecalsTools(Panel):
+class VIEW3D_PT_Duckx_DecalsTools(Panel):
     bl_idname = "VIEW3D_PT_decals_panel"
     bl_label = "Decals Tools"
     bl_space_type = "VIEW_3D"
@@ -509,47 +495,89 @@ class VIEW3D_PT_DecalsTools(Panel):
         
             
         
-class VIEW3D_PT_ShowHide(Panel):
-    bl_idname = "VIEW3D_PT_show_hide_panel"
-    bl_label = "Show and Hide"
+class VIEW3D_PT_Duckx_Groups(Panel):
+    bl_idname = "VIEW3D_PT_duckx_groups_panel"
+    bl_label = "Groups"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "🦆"
 
     @classmethod
     def poll(cls, context):
-        return context.scene.duckx_tools.show_hide_panel
+        return context.scene.duckx_tools.groups_panel
     
     def draw(self, context):
         scene = context.scene
         duckx_tools = scene.duckx_tools  
 
         layout = self.layout
-        row = layout.row()
-        row.label(text = "Groups")
-        box = layout.box()
-        if duckx_tools.list_groups != "" and duckx_tools.list_groups != "[]":
-            groups = func_core.string_to_list(duckx_tools.list_groups)
-            for i in range(len(groups)):
-                row = box.row(align=True)
-                #row.alignment = "CENTER"
-                show = row.operator("duckx_tools.show_hide_operator", text=str(i), icon="OBJECT_DATA")
-                show.action = "show"
-                show.index = i
-                add = row.operator("duckx_tools.show_hide_operator", text="", icon="ADD")
-                add.action = "add"
-                add.index = i
-                remove = row.operator("duckx_tools.show_hide_operator", text="", icon="REMOVE")
-                remove.action = "remove"
-                remove.index = i
-                de = row.operator("duckx_tools.show_hide_operator", text="", icon="TRASH")
-                de.action = "del"
-                de.index = i
-        row = box.row(align=True)
+        row = layout.row(align=True)
         row.alignment = "CENTER"
-        row.scale_x = 2
-        row.operator("duckx_tools.show_hide_operator", text="", icon="ADD").action = "append"
+        #row.label(text = "Groups")
 
+        tabs = func_core.string_to_list(duckx_tools.group_lib)
+        #print(tabs)
+        if len(tabs) > 0:
+            for i, tab in enumerate(tabs):
+                #print(tab)
+                tab = row.operator("duckx_tools.group_tools_operator", text=str(i) if len(tabs) > 4 else tabs[i][0], depress=True if i == duckx_tools.tab_active else False)
+                tab.action = "active_tab"
+                tab.tab_index = i
+                
+            row.operator("duckx_tools.group_tools_operator", text="", icon="ADD").action = "add_tab"
+            box = layout.box()
+            row = box.row(align=True)
+            #for groups in tabs[duckx_tools.group_active]:
+            if group_tools.edit_tab_name == True:
+                row.prop(duckx_tools, "group_tab_name", text="")
+                row.operator("duckx_tools.group_tools_operator", text="", icon="CHECKMARK").action = "rename_yes"
+                row.operator("duckx_tools.group_tools_operator", text="", icon="PANEL_CLOSE").action = "rename_cancel"
+            else:
+                row.label(text=tabs[duckx_tools.tab_active][0])
+                row.operator("duckx_tools.group_tools_operator", text="", icon="OUTLINER_DATA_GP_LAYER").action = "rename_tab"
+            row.operator("duckx_tools.group_tools_operator", text="", icon="TRASH").action = "del_tab"
+            col = box.column(align=True)
+            if len(tabs[duckx_tools.tab_active][1]) > 0:
+                for i in range(len(tabs[duckx_tools.tab_active][1])):
+                    row = col.row(align=True)
+                    group_name = ", ".join(tabs[duckx_tools.tab_active][1][i][1])
+                    group = row.operator("duckx_tools.group_tools_operator", text=group_name, icon="OBJECT_DATA" if tabs[duckx_tools.tab_active][1][i][0] == "object" else "OUTLINER_COLLECTION")
+                    group.action = "active_group"
+                    group.index = i
+                    append_group = row.operator("duckx_tools.group_tools_operator", text="", icon="ADD")
+                    append_group.action = "append_to_group"
+                    append_group.index = i
+                    remove_group = row.operator("duckx_tools.group_tools_operator", text="", icon="REMOVE")
+                    remove_group.action = "remove_from_group"
+                    remove_group.index = i
+                    del_group = row.operator("duckx_tools.group_tools_operator", text="", icon="TRASH")
+                    del_group.action = "del_group"
+                    del_group.index = i
+            row = box.row(align=True)
+            row.alignment = "CENTER"
+            row.scale_x = 2
+            #row.operator("duckx_tools.group_tools_operator", text="", icon="ADD").action = "append"
+            row.popover("VIEW3D_PT_add_group_menu", text="", icon="ADD")
+        else:
+            row.operator("duckx_tools.group_tools_operator", text="", icon="ADD").action = "add_tab"
+            #row.operator("duckx_tools.group_tools_operator", text="0").action = "tab"
+
+class VIEW3D_PT_Duckx_AddGroupMenu(Panel):
+    bl_label = "Add Group"
+    bl_idname = "VIEW3D_PT_add_group_menu"
+    bl_options = {'INSTANCED'}
+    bl_space_type = 'VIEW_3D' 
+    bl_region_type = 'WINDOW'
+
+    def draw(self, context):
+        scene = context.scene
+        duckx_tools = scene.duckx_tools
+        layout = self.layout
+        row = layout.row(align=True)
+        row.operator("duckx_tools.group_tools_operator", text="Collection", icon="OUTLINER_COLLECTION").action = "add_coll_group"   
+        row.operator("duckx_tools.group_tools_operator", text="Object", icon="OBJECT_DATA").action = "add_obj_group"   
+
+        
 
 class DuckXMenu(Menu):
     bl_idname = "OBJECT_MT_duckx_tools"
@@ -607,7 +635,7 @@ def draw_duckx_operator(self, context):
         layout.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="", icon="SEQUENCE_COLOR_09")
     layout.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINK_BLEND")
 
-classes = [VIEW3D_PT_Duckx_MainPanel, VIEW3D_PT_TriangleMenu, VIEW3D_PT_DecalsTools, VIEW3D_PT_ShowHide, DuckXMenu]
+classes = [VIEW3D_PT_Duckx_MainPanel, VIEW3D_PT_Duckx_DecalsTools, VIEW3D_PT_Duckx_Groups, VIEW3D_PT_Duckx_AddGroupMenu, DuckXMenu]
 
 def register():
     for cls in classes:

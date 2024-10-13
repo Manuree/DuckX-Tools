@@ -229,6 +229,82 @@ def select_collection_by_name(collection_name):
     # If the collection was not found, return False
     return False
 
+def hide_collection(collection_name:str, hide_viewport:bool = True):
+    # ค้นหา LayerCollection ใน View Layer ปัจจุบัน
+    layer_collections = bpy.context.view_layer.layer_collection
+
+    # ฟังก์ชันค้นหา LayerCollection ตามชื่อ
+    def find_layer_collection(layer_collection, name):
+        if layer_collection.name == name:
+            return layer_collection
+        for child in layer_collection.children:
+            found = find_layer_collection(child, name)
+            if found:
+                return found
+        return None
+
+    # ค้นหาคอลเลคชันที่ต้องการ
+    target_layer_collection = find_layer_collection(layer_collections, collection_name)
+
+    if target_layer_collection:
+        # พับคอลเลคชัน
+        target_layer_collection.hide_viewport = hide_viewport
+        print(f"Collapsed collection '{collection_name}'")
+    else:
+        print(f"Collection '{collection_name}' not found")
+
+def get_hierarchy_collections(collection):
+    collections_list = []
+
+    # Traverse upward to get all parents
+    def find_parent(collection):
+        for coll in bpy.data.collections:
+            if collection.name in coll.children:
+                return coll
+        return None
+
+    # Traverse downward to get all children
+    def traverse_children(collection):
+        collections_list.append(collection.name)
+        for child in collection.children:
+            traverse_children(child)
+
+    # Add the collection itself
+    collections_list.append(collection.name)
+
+    # Traverse up to parent collections
+    parent = find_parent(collection)
+    while parent:
+        collections_list.append(parent.name)
+        parent = find_parent(parent)
+
+    # Traverse down to child collections
+    traverse_children(collection)
+
+    # Remove duplicates (in case a collection is both parent and child)
+    collections_list = list(set(collections_list))
+
+    return collections_list
+
+def select_objects_in_collection(collection_name):
+    # ตรวจสอบว่ามีคอลเลคชันชื่อนั้นหรือไม่
+    collection = bpy.data.collections.get(collection_name)
+    if collection:
+        # ยกเลิกการเลือกวัตถุทั้งหมดก่อน
+        bpy.ops.object.select_all(action='DESELECT')
+
+        # เลือกวัตถุทั้งหมดในคอลเลคชันนั้น
+        for obj in collection.objects:
+            obj.select_set(True)
+        
+        # ตั้งวัตถุที่เลือกอันแรกเป็น active
+        if collection.objects:
+            bpy.context.view_layer.objects.active = collection.objects[0]
+        
+        print(f"Selected all objects in collection '{collection_name}'")
+    else:
+        print(f"Collection '{collection_name}' not found")
+
 def focus_object_in_outliner():
     #pass
     try:

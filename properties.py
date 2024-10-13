@@ -1,9 +1,10 @@
 import bpy
 
+from .operators import func_core
+
 from bpy.types import Scene
 from bpy.types import (PropertyGroup)
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
-
 
 
 class MyProperties(PropertyGroup):
@@ -37,7 +38,7 @@ class MyProperties(PropertyGroup):
     modifiers_tools : BoolProperty(name="Modifiers Tools Toggle", default=False)
     merge_tools : BoolProperty(name="Merge Tools Toggle", default=False)
     movex_tools : BoolProperty(name="Merge Tools Toggle", default=False)
-    show_hide_panel : BoolProperty(name="Show & Hide Panel", default=True)
+    groups_panel : BoolProperty(name="Groups Panel", default=True)
     decals_panel : BoolProperty(name="Decals Panel", default=False)
 
     obj_color : FloatVectorProperty(name="Color", subtype='COLOR', size=4, min=0, max=1, default=(0.0, 0.0, 0.0, 1.0),)
@@ -52,8 +53,11 @@ class MyProperties(PropertyGroup):
     uvmap_index : IntProperty(name="UV Map Index", min=1, default=1)
     uv_angle : FloatProperty(name="UV Angle", step=1, default=0.0, precision=2)
 
-    #Show and Hide Tools
-    list_groups : StringProperty(name="List Group")
+    #Group Tools
+    group_lib : StringProperty(name="Group Libary")
+    tab_active : IntProperty(name="Tab Active", default=0, min=0)
+    group_tab_name : StringProperty(name="Tab Name")
+        
 
     #Modifiers Tools
     mod_name : StringProperty(name="Modifiers Name")
