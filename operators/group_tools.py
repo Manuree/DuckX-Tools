@@ -127,7 +127,8 @@ class Duckx_OT_GroupTools(Operator):
                 #print(func_core.get_all_related_collections(collection_name))
 
                 func_core.hide_collection(collection_name, False)
-                func_core.select_objects_in_collection(collection_name)
+                if self.select:
+                    func_core.select_objects_in_collection(collection_name)
                 func_core.focus_object_in_outliner()
             else:
                 for coll in bpy.data.collections:
