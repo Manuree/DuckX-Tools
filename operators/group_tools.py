@@ -141,25 +141,36 @@ class Duckx_OT_GroupTools(Operator):
                 except:
                     pass
                 
+                bpy.ops.object.select_all(action='DESELECT')
                 if self.hide_all:
-                    bpy.ops.object.select_all(action='SELECT')
-                    bpy.ops.object.hide_view_set(unselected=False)
-
-                for name in objs:
-                    if name in bpy.data.objects:
-                        obj = bpy.data.objects.get(name)
-                        bpy.context.view_layer.objects.active = obj
+                    bpy.ops.object.hide_view_set(unselected=True)
+                bpy.ops.object.select_all(action='SELECT')
+                for obj in bpy.context.scene.objects:
+                    if obj.name in objs:
                         if self.invert:
                             obj.hide_set(True)
                         else:
                             obj.hide_set(False)
-                    else:
-                        print(name + " is gone")
+                        obj.select_set(True)
+                        bpy.context.view_layer.objects.active = obj
+                    
+                # bpy.ops.object.hide_view_clear()
+
+                # for name in objs:
+                #     if name in bpy.data.objects:
+                #         obj = bpy.data.objects.get(name)
+                #         bpy.context.view_layer.objects.active = obj
+                #         if self.invert:
+                #             obj.hide_set(True)
+                #         else:
+                #             obj.hide_set(False)
+                #     else:
+                #         print(name + " is gone")
 
                 bpy.ops.object.select_all(action='DESELECT')
                 if self.select:
                     func_core.select_objects_by_name(objs)
-                func_core.focus_object_in_outliner()
+                # func_core.focus_object_in_outliner()
         elif action == "append_to_group":
             objs = context.selected_objects
             if len(objs) > 0:

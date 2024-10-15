@@ -221,14 +221,22 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             if duckx_tools.movex_tools != False:
                 row.operator("duckx_tools.toggle_prop_operator", text="", icon="TRIA_DOWN").prop_name = "movex_tools"
                 row.label(text="Align")
-                row = box.row(align=True)
-                row.label(text="Move From Active")
-                row = box.row(align=True)
-                row.scale_y = 0.1
-                row.enabled = False
-                row.label(text="Ctrl Click for invert axis")
-                row = box.row(align=True)
+                col = box.column(align=True)
+                col.label(text="Align To Active")
+                row = col.row(align=True)
+                row.alignment = "CENTER"
                 row.scale_y = 1.5
+                row.scale_x = 5
+                bt = row.operator("duckx_tools.align_to_active_operator", text="", icon_value=icon_reg.iconLib("giz_X"))
+                bt.axis = "x"
+                bt = row.operator("duckx_tools.align_to_active_operator", text="", icon_value=icon_reg.iconLib("giz_Y"))
+                bt.axis = "y"
+                bt = row.operator("duckx_tools.align_to_active_operator", text="", icon_value=icon_reg.iconLib("giz_Z"))
+                bt.axis = "z"
+                col = box.column(align=True)
+                row = col.row(align=True)
+                row.label(text="Move From Active")
+                row = col.row(align=True)
                 row.scale_x = 5
                 row.alignment = "CENTER"
                 bt = row.operator("duckx_tools.movex_tools_operator", text="", icon_value=icon_reg.iconLib("giz_X"))
@@ -237,34 +245,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 bt.move_axis = "y"
                 bt = row.operator("duckx_tools.movex_tools_operator", text="", icon_value=icon_reg.iconLib("giz_Z"))
                 bt.move_axis = "z"
-                col = box.column(align=True)
-                col.label(text="Align To Active")
-                row = col.row(align=True)
-                row.scale_y = 0.8
-                row.enabled = False
-                row.label(text="Ctrl Click for invert axis")
-                row = col.row(align=True)
-                row.alignment = "CENTER"
-                row.scale_x = 5
-                bt = row.operator("duckx_tools.align_to_active_operator", text="", icon_value=icon_reg.iconLib("giz_X"))
-                bt.axis = "x"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="", icon_value=icon_reg.iconLib("giz_Y"))
-                bt.axis = "y"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="", icon_value=icon_reg.iconLib("giz_Z"))
-                bt.axis = "z"
-                row = col.row(align=True)
-                bt = row.operator("duckx_tools.align_to_active_operator", text="XY")
-                bt.axis = "xy"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="XZ")
-                bt.axis = "xz"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="YX")
-                bt.axis = "yx"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="YZ")
-                bt.axis = "yz"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="ZY")
-                bt.axis = "zy"
-                bt = row.operator("duckx_tools.align_to_active_operator", text="ZX")
-                bt.axis = "zx"
+                
 
                 
             else:

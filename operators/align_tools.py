@@ -14,15 +14,21 @@ class Duckx_OT_AlignToActive(Operator):
     bl_region_type = "UI"
     bl_icon = "EMPTY_ARROWS"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Align To Active"
+    bl_description = "SHIFT CLICK for ignore axis"
 
     axis : EnumProperty(
         name = "Axis",
-        items = [('x', "X", ""),('y', "Y", ""),('z', "Z", ""),
-                 ('xy', "XY", ""),('xz', "XZ", ""),
-                 ('yx', "YX", ""), ('yz', "YZ", ""),
-                 ('zy', "ZY", ""), ('zx', "ZX", "")]
+        items = [('x', "X", ""),('y', "Y", ""),('z', "Z", "")]
         )
+    flip : BoolProperty(name="Flip Axis", default=False)
+    ignore = False
+
+
+    def invoke(self, context, event):
+        self.flip = False
+        if event.shift:
+            self.ignore = True
+        return self.execute(context)
 
     def execute(self, context):
         pivot = bpy.context.scene.tool_settings.transform_pivot_point
@@ -38,32 +44,23 @@ class Duckx_OT_AlignToActive(Operator):
         bpy.context.scene.tool_settings.transform_pivot_point = 'ACTIVE_ELEMENT'
 
         axis = self.axis
-        if axis == "xy":
-            a = (0, 1, 1)
-            b = (1, 0, 1)
-        elif axis == "xz":
-            a = (0, 1, 1)
-            b = (1, 1, 0)
-        elif axis == "yx":
-            a = (1, 0, 1)
-            b = (0, 1, 1)
-        elif axis == "yz":
-            a = (1, 0, 1)
-            b = (1, 1, 0)
-        elif axis == "zy":
-            a = (1, 1, 0)
-            b = (1, 0, 1)
-        elif axis == "zx":
-            a = (1, 1, 0)
-            b = (0, 1, 1)
-
         if axis == "x":
             bpy.ops.transform.resize(value=(0, 1, 1))
+            a = (1, 0, 1)
+            b = (1, 1, 0)
         elif axis == "y":
             bpy.ops.transform.resize(value=(1, 0, 1))
+            a = (0, 1, 1)
+            b = (1, 1, 0)
         elif axis == "z":
             bpy.ops.transform.resize(value=(1, 1, 0))
-        else:
+            a = (0, 1, 1)
+            b = (1, 0, 1)
+        
+        if self.flip:
+            a, b = b, a
+        
+        if self.ignore:
             try:
                 bpy.ops.transform.resize(value=a)
                 bpy.ops.mesh.select_all(action='DESELECT')
