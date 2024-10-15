@@ -170,7 +170,7 @@ class Duckx_OT_GroupTools(Operator):
                 bpy.ops.object.select_all(action='DESELECT')
                 if self.select:
                     func_core.select_objects_by_name(objs)
-                # func_core.focus_object_in_outliner()
+                func_core.focus_object_in_outliner()
         elif action == "append_to_group":
             objs = context.selected_objects
             if len(objs) > 0:
