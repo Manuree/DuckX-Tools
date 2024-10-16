@@ -62,7 +62,8 @@ class Duckx_OT_CollectionExport(Operator):
                 object_types={'MESH', 'OTHER', 'EMPTY', 'ARMATURE'},
                 use_custom_props=True,
                 global_scale=1.0,
-                add_leaf_bones=False, bake_anim=False)
+                add_leaf_bones=False, bake_anim=False,
+                use_active_collection=True)
             
             try:
                 if export_data[0] == "fbx":
