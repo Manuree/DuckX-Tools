@@ -14,7 +14,7 @@ class Duckx_OT_AlignToActive(Operator):
     bl_region_type = "UI"
     bl_icon = "EMPTY_ARROWS"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "SHIFT CLICK for ignore axis"
+    bl_description = "SHIFT CLICK for ignore axis \nALT CLICK for collapse 2 vertex wihout this axis"
 
     axis : EnumProperty(
         name = "Axis",
@@ -22,12 +22,15 @@ class Duckx_OT_AlignToActive(Operator):
         )
     flip : BoolProperty(name="Flip Axis", default=False)
     ignore = False
+    two_vetex = False
 
 
     def invoke(self, context, event):
         self.flip = False
         if event.shift:
             self.ignore = True
+        if event.alt:
+            self.two_vetex = True
         return self.execute(context)
 
     def execute(self, context):
@@ -45,22 +48,31 @@ class Duckx_OT_AlignToActive(Operator):
 
         axis = self.axis
         if axis == "x":
-            bpy.ops.transform.resize(value=(0, 1, 1))
+            if self.ignore:
+                bpy.ops.transform.resize(value=(1, 0, 0))
+            else:
+                bpy.ops.transform.resize(value=(0, 1, 1))
             a = (1, 0, 1)
             b = (1, 1, 0)
         elif axis == "y":
-            bpy.ops.transform.resize(value=(1, 0, 1))
+            if self.ignore:
+                bpy.ops.transform.resize(value=(0, 1, 0))
+            else:
+                bpy.ops.transform.resize(value=(1, 0, 1))
             a = (0, 1, 1)
             b = (1, 1, 0)
         elif axis == "z":
-            bpy.ops.transform.resize(value=(1, 1, 0))
+            if self.ignore:
+                bpy.ops.transform.resize(value=(0, 0, 1))
+            else:
+                bpy.ops.transform.resize(value=(1, 1, 0))
             a = (0, 1, 1)
             b = (1, 0, 1)
         
         if self.flip:
             a, b = b, a
         
-        if self.ignore:
+        if self.two_vetex:
             try:
                 bpy.ops.transform.resize(value=a)
                 bpy.ops.mesh.select_all(action='DESELECT')
