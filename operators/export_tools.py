@@ -6,6 +6,8 @@ from .. import icon_reg
 from bpy.types import (Operator )
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
+import os
+
 class Duckx_OT_CollectionExport(Operator):
     bl_idname = "duckx_tools.collection_export_operator"
     bl_label = "Collection Export"
@@ -51,7 +53,7 @@ class Duckx_OT_CollectionExport(Operator):
             
             # เส้นทางที่คุณต้องการจะบันทึกไฟล์ .fbx
             file_name = collection_name + ".fbx"
-            export_path = export_data[1] + file_name
+            export_path = bpy.path.abspath(export_data[1]) + file_name
 
             def export_fbx():
                 # คำสั่งสำหรับ Export .fbx
@@ -65,6 +67,8 @@ class Duckx_OT_CollectionExport(Operator):
                 add_leaf_bones=False, bake_anim=False,
                 use_active_collection=True)
             
+            if not os.path.exists(os.path.dirname(export_path)):
+                os.makedirs(os.path.dirname(export_path))
             try:
                 if export_data[0] == "fbx":
                     export_fbx()
