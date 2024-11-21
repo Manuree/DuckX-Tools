@@ -24,12 +24,16 @@ class Duckx_OT_GroupTools(Operator):
     hide_all = True
     invert = False
     select = False
+    move = False
     
     def invoke(self, context, event):
         if event.shift:
             if event.ctrl:
                 self.select = True
             self.hide_all = False
+            return self.execute(context)
+        elif event.ctrl and event.alt:
+            self.move = True
             return self.execute(context)
         elif event.alt:
             self.invert = True
@@ -105,7 +109,26 @@ class Duckx_OT_GroupTools(Operator):
             print("Show group")
             if group_lib[duckx_tools.tab_active][1][index][0] == "collection":
                 collection_name = group_lib[duckx_tools.tab_active][1][index][1][0]
-                
+                if self.move:
+                    print("Move to group")
+                    # ตรวจสอบว่าคอลเลคชันมีอยู่จริง
+                    collection = bpy.data.collections.get(collection_name)
+                    if not collection:
+                        print(f"Collection '{collection_name}' does not exist!")
+                    else:
+                        # วัตถุที่เลือกในปัจจุบัน
+                        selected_objects = bpy.context.selected_objects
+
+                        for obj in selected_objects:
+                            # ลบวัตถุออกจากคอลเลคชันปัจจุบันทั้งหมด
+                            for obj_collection in obj.users_collection:
+                                obj_collection.objects.unlink(obj)
+
+                            # ลิงก์วัตถุไปยังคอลเลคชันเป้าหมาย
+                            collection.objects.link(obj)
+
+                        print(f"Moved {len(selected_objects)} object(s) to collection '{collection_name}'.")
+                    return {'FINISHED'}
                 try:
                     bpy.ops.object.mode_set(mode='OBJECT')
                 except:
