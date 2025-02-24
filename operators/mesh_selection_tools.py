@@ -22,6 +22,7 @@ class Duckx_OT_SelectFromIndex(Operator):
         action = duckx_tools.select_type
         obj = bpy.context.active_object
         
+        bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.wm.tool_set_by_id(name="builtin.move")
         if action == "vertex":
             bpy.ops.mesh.select_mode(type='FACE')

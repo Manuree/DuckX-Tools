@@ -362,37 +362,7 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 row = box.row()
                 row.operator("duckx_tools.uvrotation_operator", text="180°").angle = 180
 
-            box = layout.box()
-            obj = bpy.context.active_object
-            selected_objects = bpy.context.selected_objects
-            if selected_objects:
-                if obj:
-                    if obj.type == 'MESH':
-                        uvmaps = obj.data.uv_layers
-                        for uvmap in uvmaps:
-                            if obj.data.uv_layers.active.name == uvmap.name:
-                                row = box.row()
-                                row.label(text="UV Map Active : " + uvmap.name)
-                                row.prop(uvmap, "active_render", text="", icon="RESTRICT_RENDER_OFF")
-                    else:
-                        row = box.row()
-                        row.label(text="Please Select Mesh")
-                
-            row = box.row()
-            row.prop(duckx_tools, "uvmap_set_type", expand=True)
-            row.scale_x = 2
-            if duckx_tools.uvmap_set_type == "name":
-                row.prop(duckx_tools, "uvmap_name", text="")
-            elif duckx_tools.uvmap_set_type == "index":
-                row.prop(duckx_tools, "uvmap_index", text="")
-            row = box.row()
-            row.operator("duckx_tools.active_uv_map_operator", text="Active").action = "set"
-            row.operator("duckx_tools.active_uv_map_operator", text="New").action = "new"
-            row.operator("duckx_tools.active_uv_map_operator", text="Rename").action = "rename"
-            row.enabled = True
-            row.operator("duckx_tools.active_uv_map_operator", text="Delete").action = "del"
-            row = box.row()
-            row.operator("duckx_tools.uvrotation_operator", text="Delete")
+            
         
         #Macro
         if duckx_tools.tabs_menu == "macro":
