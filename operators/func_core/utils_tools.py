@@ -238,3 +238,18 @@ def focus_object_in_outliner():
                         bpy.ops.outliner.show_active()
                 except:
                     pass
+
+def clipboard(value):
+    try:
+        # Convert the value to a string before copying
+        value_str = str(value)
+
+        # Use the appropriate command based on the operating system
+        if subprocess.os.name == "nt":  # Windows
+            subprocess.run(["clip"], input=value_str, text=True, check=True)
+        else:  # Linux or macOS
+            subprocess.run(["pbcopy"], input=value_str.encode("utf-8"), check=True)
+
+        print("Value copied to clipboard successfully.")
+    except Exception as e:
+        print(f"An error occurred: {e}")

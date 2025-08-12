@@ -471,23 +471,7 @@ class Duckx_OT_DeleteLooseParts(Operator):
         bpy.ops.mesh.delete(type='FACE')
         return {'FINISHED'}
     
-class Duckx_OT_EdgeLength(Operator):
-    bl_idname = "duckx_tools.edge_length"
-    bl_label = "Utilities Tools"
-    bl_description = "Utilities Tools"
 
-
-    def execute(self, context):
-        msg, err = func_core.edge_length(context)
-        if err:
-            self.report({'WARNING'}, err)
-            return {'CANCELLED'}
-
-        try:
-            func_core.message_box(msg, "Edge Length", "CON_DISTLIMIT")
-        except Exception:
-            self.report({'INFO'}, msg)
-        return {'FINISHED'}
             
 
 class Duckx_OT_ConsoleCommand(Operator):
@@ -556,7 +540,7 @@ add_expand_panel("Console", draw_expand_panel)
 
 classes = [Duckx_OT_AddEmpty, Duckx_OT_ScaleZero, Duckx_OT_CoupleMergeVertex, Duckx_OT_DuplicateAndSeparate, 
            Duckx_OT_OriginFromSelection, Duckx_OT_BoundaryTools, Duckx_OT_InvertInLooseParts,
-           Duckx_OT_RemoveLoopRing, Duckx_OT_CorrectFace, Duckx_OT_DeleteLooseParts, Duckx_OT_EdgeLength,
+           Duckx_OT_RemoveLoopRing, Duckx_OT_CorrectFace, Duckx_OT_DeleteLooseParts,
            Duckx_OT_ConsoleCommand]
 
 def register():

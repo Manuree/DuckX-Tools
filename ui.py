@@ -238,9 +238,10 @@ class DuckXMenu(Menu):
                     layout.operator("duckx_tools.merge_by_size", text="Face", icon="LIGHTPROBE_PLANE").action = "face"
                 layout.operator("duckx_tools.merge_by_size", text="Edge", icon="SNAP_MIDPOINT").action = "edge"
                 layout.separator()
-                layout.label(text="Dimension")
                 layout.operator("duckx_tools.edge_length", text="Edge Length", icon="FIXED_SIZE")
-                
+            elif context.mode == 'OBJECT':
+                layout.separator()
+                layout.operator("duckx_tools.distance_calculator", text="Distance", icon=bl_icons("DRIVER_DISTANCE"))
             layout.separator()
             layout.operator_menu_enum("duckx_tools.object_wire", property="action", text="Wirew", icon="MESH_ICOSPHERE")
         else:

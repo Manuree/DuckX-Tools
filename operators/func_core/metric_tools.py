@@ -1,6 +1,8 @@
 import bpy
 import bmesh
 
+from . import utils_tools
+
 def _convert_to_unit(val_meters, unit):
     """แปลงจาก meters ไปตามหน่วยที่ตั้งใน scene.unit_settings.length_unit"""
     if unit == 'KILOMETERS':
@@ -42,7 +44,7 @@ def unit_short(unit: str) -> str:
 def edge_length(context):
     obj = context.active_object
     if not (obj and obj.type == 'MESH' and obj.mode == 'EDIT'):
-        return None, "โปรดอยู่ใน Edit Mode และเลือก Mesh ก่อน"
+        return None, "Please be in Edit Mode and select a mesh first."
 
     scene = context.scene
     unit = scene.unit_settings.length_unit
@@ -51,7 +53,7 @@ def edge_length(context):
     try:
         sel_edges = [e for e in bm.edges if e.select]
         if not sel_edges:
-            return None, "ยังไม่ได้เลือก Edge"
+            return None, "Please select Edge"
 
         mw = obj.matrix_world
 
@@ -81,7 +83,62 @@ def edge_length(context):
                 f"\nTotal: {total:.4f} {unit_short(unit)} | "
                 f"\nAverage: {avg:.4f} {unit_short(unit)}"
             )
-
+            utils_tools.clipboard(total)
         return msg, None
     finally:
         bmesh.update_edit_mesh(obj.data, loop_triangles=False)
+
+def distance_calculator() -> float:
+    """
+    คำนวณระยะห่างระหว่างจุดกำเนิด (origin) ของวัตถุ 2 ชิ้นที่ถูกเลือก
+    - ตรวจสอบว่าเลือกไว้ "พอดี" 2 ชิ้น
+    - ผลลัพธ์คืนเป็น float ในหน่วยตาม scene.unit_settings.length_unit
+    - คัดลอกผลลัพธ์ (พร้อมหน่วย) ไปยัง func_core.clipboard()
+    """
+    ctx = bpy.context
+    scene = ctx.scene
+    unit = scene.unit_settings.length_unit or 'METERS'
+    if unit == 'ADAPTIVE':
+        # สำหรับการคำนวณเป็นตัวเลขเดี่ยว ให้ยึดเป็นเมตร
+        unit = 'METERS'
+
+    sel = list(ctx.selected_objects)
+    if len(sel) != 2:
+        raise RuntimeError("Please select exactly 2 objects.")
+
+    obj_a, obj_b = sel
+
+    # world-space origin positions
+    p_a = obj_a.matrix_world.translation
+    p_b = obj_b.matrix_world.translation
+
+    # ระยะใน Blender Units (BU)
+    dist_BU = (p_b - p_a).length
+
+    # แปลง BU -> meters ด้วย scale_length
+    scale_len = scene.unit_settings.scale_length or 1.0
+    dist_m = dist_BU * scale_len
+
+    # แปลง meters -> หน่วยที่ตั้ง
+    dist_u = _convert_to_unit(dist_m, unit)
+
+    # ส่งค่าเข้า func_core.clipboard() (พยายาม import ทั้งแบบ relative และ absolute)
+    clipboard_text = f"{dist_u:.6f} {unit_short(unit)}"
+    func_core = None
+    try:
+        from . import func_core as _fc  # ภายในแพ็กเกจเสริม
+        func_core = _fc
+    except Exception:
+        try:
+            import func_core as _fc  # เป็นโมดูลอิสระ
+            func_core = _fc
+        except Exception:
+            func_core = None
+
+    if func_core:
+        try:
+            func_core.clipboard(clipboard_text)
+        except Exception:
+            pass
+
+    return float(dist_u)
