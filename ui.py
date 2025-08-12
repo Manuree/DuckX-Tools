@@ -62,7 +62,7 @@ def add_expand_panel(panel_name, draw_func, tab="MESH"):
         panel_name (str): ชื่อ panel
         draw_func (callable): ฟังก์ชันวาด UI
         tab (str): ประเภท tab ที่ panel นี้จะอยู่ (ค่าเริ่มต้น "MESH")
-                   ตัวเลือกเช่น "MESH", "UV", "INS", "MACRO", "VIEW", "FILE_RENDER", "SETTING"
+                   ตัวเลือกเช่น "MESH", "UV", "INS", "UTIL", "VIEW", "FILE_RENDER", "SETTING"
     """
     expand_panel_layout[panel_name] = {
         "draw_func": draw_func,
@@ -158,7 +158,6 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
                 draw_panel(self, context, row, "Boundary_Tools", props)
 
             if expand_panel_layout:
-                # Automatically draw all registered expand panels
                 for panel_name in expand_panel_layout:
                     draw_expand_panel(self, context, layout, panel_name, props)
 
@@ -171,9 +170,10 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
         elif props.tabs_menu == "INS":
             pass
         elif props.tabs_menu == "UTIL":
-            pass
-        elif props.tabs_menu == "MACRO":
-            pass
+            if expand_panel_layout:
+                for panel_name in expand_panel_layout:
+                    draw_expand_panel(self, context, layout, panel_name, props)
+
         elif props.tabs_menu == "FILE_RENDER":
             row = layout.row(align=True)
             draw_panel(self, context, row, "Collection Export", props)
@@ -196,7 +196,6 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
             draw_panel(self, context, row, "Keymap", props)
 
             if expand_panel_layout:
-                # Automatically draw all registered expand panels
                 for panel_name in expand_panel_layout:
                     draw_expand_panel(self, context, layout, panel_name, props)
 

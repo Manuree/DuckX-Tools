@@ -471,7 +471,22 @@ class Duckx_OT_DeleteLooseParts(Operator):
         bpy.ops.mesh.delete(type='FACE')
         return {'FINISHED'}
     
+class Duckx_OT_RunScript(Operator):
+    bl_idname = "duckx_tools.run_script"
+    bl_label = "Run Script"
+    bl_options = {"REGISTER", "UNDO"}
 
+    file_name : StringProperty(name="File")
+
+    def execute(self, context):
+        try:
+            func_core.run_text_block_by_exec(self.file_name)
+        except Exception as e:
+            self.report({'ERROR'}, f"{e}")
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
+    
             
 
 class Duckx_OT_ConsoleCommand(Operator):
@@ -527,8 +542,19 @@ def draw_panel_boundary_tools(self, context, layout, props):
     col.operator("duckx_tools.invert_in_loose_parts", text="Invert In Loose Parts", icon=bl_icons("MOD_EXPLODE"))
     return layout
 
+def draw_run_script(layself, context, layout, props):
+    box = layout.box()
+    row = box.row()
+    row.label(text="Scripts")
+    row = box.row()
+    col = row.column(align=True)
+    texts = bpy.data.texts
+    for text in texts:
+        col.operator("duckx_tools.run_script", text=text.name).file_name = text.name
 
-def draw_expand_panel(layself, context, layout, propsout):
+    return box
+
+def draw_expand_panel(layself, context, layout, props):
     row = layout.row(align=True)
     row.operator("duckx_tools.console_command", text="Run Command", icon="CONSOLE")
     return row
@@ -536,11 +562,12 @@ def draw_expand_panel(layself, context, layout, propsout):
 add_panel("Add_Empty", draw_panel_empty)
 add_panel("Scale_Zero", draw_panel_scale_zero)
 add_panel("Boundary_Tools", draw_panel_boundary_tools)
+add_expand_panel("Run Script", draw_run_script, "UTIL")
 add_expand_panel("Console", draw_expand_panel)
 
 classes = [Duckx_OT_AddEmpty, Duckx_OT_ScaleZero, Duckx_OT_CoupleMergeVertex, Duckx_OT_DuplicateAndSeparate, 
            Duckx_OT_OriginFromSelection, Duckx_OT_BoundaryTools, Duckx_OT_InvertInLooseParts,
-           Duckx_OT_RemoveLoopRing, Duckx_OT_CorrectFace, Duckx_OT_DeleteLooseParts,
+           Duckx_OT_RemoveLoopRing, Duckx_OT_CorrectFace, Duckx_OT_DeleteLooseParts, Duckx_OT_RunScript,
            Duckx_OT_ConsoleCommand]
 
 def register():
