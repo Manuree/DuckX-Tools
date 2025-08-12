@@ -13,7 +13,7 @@ class Duckx_OT_FlipTools(Operator):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Flip Tools - Flip objects around Global Origin or 3D Cursor"
+    bl_description = "Flip Tools - Flip objects around Global Origin or 3D Cursor \n[SHIFT CLICK] for 3D Cursor"
 
     action : EnumProperty(name="Action",
                           items=[
