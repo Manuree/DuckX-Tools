@@ -3,607 +3,111 @@ import bmesh
 from bpy.types import (Operator)
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
+from ..icon_reg import *
 from . import func_core
+from ..ui import add_panel, add_expand_panel
 
-import urllib.request
-import json
-
-class Duckx_OT_ToggleProp(Operator):
-    bl_idname = "duckx_tools.toggle_prop_operator"
-    bl_label = "Toggle"
-    bl_description = "Show/Hide"
-
-    prop_name: bpy.props.StringProperty(name="Property Name") 
-
-    def execute(self, context):
-        scene = context.scene
-        duckx_tools = scene.duckx_tools
-        current_value = getattr(duckx_tools, self.prop_name)
-        setattr(duckx_tools, self.prop_name, not current_value)
-        print(f"{self.prop_name}: {getattr(duckx_tools, self.prop_name)}")
-        
-        
-        return {'FINISHED'}
-    
-class Duckx_OT_ConvexTools(Operator):
-    bl_idname = "duckx_tools.convex_tools_operator"
-    bl_label = "Convex X"
+class Duckx_OT_AddEmpty(Operator):
+    bl_idname = "duckx_tools.add_empty"
+    bl_label = "Add Empty"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_icon = "MESH_ICOSPHERE"
+    bl_description = "Add an Empty Object"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Make Convex from Object"
 
-    wire : BoolProperty(name="Wire", default=True)
-    decimate : FloatProperty(name="Decimate Ratio", min=0, max=1, default=1, step=0.1, precision=4)
-    face : FloatProperty(name="Face Ratio", min=0, max=1, default=1, step=0.001, precision=4)
-    edge : FloatProperty(name="Edge Ratio", min=0, max=1, default=1, step=0.001, precision=4)  
-    
-    def execute(self, context):
-        if self.wire:
-            bpy.context.object.show_wire = True
-        else:
-            bpy.context.object.show_wire = False
-        
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.convex_hull()
-        bpy.ops.object.modifier_add(type='DECIMATE')
-        bpy.ops.mesh.convex_hull()
-        bpy.ops.duckx_tools.merge_by_size_operator(action="face", size = 1 - self.face)
-        bpy.ops.mesh.convex_hull()
-        bpy.ops.duckx_tools.merge_by_size_operator(action="edge", size = 1 - self.edge)
-        bpy.context.object.modifiers["Decimate"].ratio = self.decimate
-        bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
-        bpy.ops.mesh.convex_hull()
-        bpy.context.object.modifiers["Decimate"].use_collapse_triangulate = True
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.convert(target='MESH')
-        bpy.context.object.name = "UCX_"+bpy.context.view_layer.active_layer_collection.collection.name
-        return {'FINISHED'}
+    prefix : StringProperty(name="Prefix", default="COM_")
+    name_type : EnumProperty(
+        name="Type",
+        items=[
+            ('COLLECTION', "Collection", ""),
+            ('OBJECT', "Object", "")
+        ]
+    )
 
-class Duckx_OT_BoxFromMesh(Operator):
-    bl_idname = "duckx_tools.box_from_mesh_operator"
-    bl_label = "Box From Mesh"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Create Box from Mesh"
-
-    def execute(self, context):
-        obj = bpy.context.active_object
-        if obj and obj.type == 'MESH' and bpy.context.mode == 'EDIT_MESH':
-            name = bpy.context.object.name
-            bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1})
-            bpy.ops.mesh.separate(type='SELECTED')
-            bpy.ops.object.mode_set(mode='OBJECT')
-            func_core.deselect_object_by_name(name)
-            obj = bpy.context.selected_objects
-            bpy.context.view_layer.objects.active = obj[0]
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.separate(type='LOOSE')
-            bpy.ops.object.mode_set(mode='OBJECT')
-        elif obj and obj.type == 'MESH' and bpy.context.mode == 'OBJECT':
-            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked":False, "mode":'TRANSLATION'})
-
-        objs = func_core.objects_to_list()
-        for obj in objs:
-            func_core.select_object_by_name(obj)
-            func_core.select_face_by_size("L")
-            bpy.ops.duckx_tools.orienselect_operator()
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-            #bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-            bpy.context.scene.tool_settings.use_transform_data_origin = True
-            bpy.ops.transform.transform(mode='ALIGN', orient_type="Face")
-            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-            bpy.context.scene.tool_settings.use_transform_data_origin = False
-
-            bpy.ops.view3d.snap_cursor_to_selected()
-            selectObject = bpy.context
-            selectObject.object
-            lo : FloatVectorProperty(name="Object Location")
-            ro : FloatVectorProperty(name="Object Rotation")
-            di : FloatVectorProperty(name="Object Dimensions")
-            lo = selectObject.object.location
-            ro = selectObject.object.rotation_euler
-            di = selectObject.object.dimensions
-            bpy.ops.mesh.primitive_cube_add()
-            selectObject = bpy.context
-            selectObject.object
-            bpy.context.object.location = lo
-            bpy.context.object.rotation_euler = ro
-            bpy.context.object.dimensions = di
-            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-            bpy.context.object.name = "UBX_"+bpy.context.view_layer.active_layer_collection.collection.name
-            bpy.ops.object.select_all(action='DESELECT')
-            func_core.select_object_by_name(obj)
-            bpy.ops.object.delete(use_global=False)
-            bpy.ops.duckx_tools.orienglobal_operator()
-        return {'FINISHED'}
-    
-class Duckx_OT_MeshToBox(Operator):
-    bl_idname = "duckx_tools.mesh_to_box_operator"
-    bl_label = "Mesh to Box"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Convert Mesh To Box"
-
-    box_offset : FloatProperty(name="Box Offset", min=0, max=1, default=0.0001, step=0.0001, precision=4)
-    remove_doubles : FloatProperty(name="Remove Doubles", min=0, max=1, default=0.0002, step=0.0001, precision=4)
-    fill_hole : BoolProperty(name="Fill Hole", default=True)
-    
-    def execute(self, context):
-        pivot = bpy.context.scene.tool_settings.transform_pivot_point
-        orient = bpy.context.scene.transform_orientation_slots[0].type
-        
-        
-        
-
-        obj = bpy.context.active_object
-        main_object = obj
-        print(f"Main Object {main_object.name}")
-        bpy.ops.mesh.separate(type='SELECTED')
-        func_core.deselect_object_by_name(main_object.name)
-        obj = bpy.context.selected_objects
-        func_core.select_object_by_name(obj[0].name)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.object.mode_set(mode='OBJECT')
-        sub_object = bpy.context.active_object
-        print(f"Sub Object {sub_object.name}")
-
-        #Create Box
-        func_core.select_face_by_size("L")
-        bpy.ops.duckx_tools.orienselect_operator()
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-        bpy.context.scene.tool_settings.use_transform_data_origin = True
-        bpy.ops.transform.transform(mode='ALIGN', orient_type="Face")
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-        bpy.context.scene.tool_settings.use_transform_data_origin = False
-        bpy.ops.view3d.snap_cursor_to_selected()
-        selectObject = bpy.context
-        selectObject.object
-        lo : FloatVectorProperty(name="Object Location")
-        ro : FloatVectorProperty(name="Object Rotation")
-        di : FloatVectorProperty(name="Object Dimensions")
-        lo = selectObject.object.location
-        ro = selectObject.object.rotation_euler
-        di = selectObject.object.dimensions
-        bpy.ops.mesh.primitive_cube_add()
-        selectObject = bpy.context
-        selectObject.object
-        bpy.context.object.location = lo
-        bpy.context.object.rotation_euler = ro
-        bpy.context.object.dimensions = di
-        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-        bpy.context.object.name = "UBX_"+bpy.context.view_layer.active_layer_collection.collection.name
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.transform.shrink_fatten(value=self.box_offset, use_even_offset=True, mirror=True)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        box = bpy.context.active_object
-        print(f"Box Object {box.name}")
-
-
-        #Add Boolean
-        bpy.ops.object.select_all(action='DESELECT')
-        func_core.select_object_by_name(sub_object.name)
-        bpy.ops.object.modifier_add(type='BOOLEAN')
-        bpy.context.object.modifiers["Boolean"].object = box
-        bpy.context.object.modifiers["Boolean"].operation = 'INTERSECT'
-        if self.fill_hole:
-            bpy.context.object.modifiers["Boolean"].use_self = True
-
-
-
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.edge_split(type='EDGE')
-        bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
-        bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
-        bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
-        bpy.ops.transform.resize(value=(20, 20,20))
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.convert(target='MESH')
-        bpy.ops.object.select_all(action='DESELECT')
-        func_core.select_object_by_name(box.name)
-        bpy.ops.object.delete(use_global=False)
-        func_core.select_object_by_name(sub_object.name)
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.remove_doubles(threshold=self.remove_doubles)
-        bpy.ops.object.mode_set(mode='OBJECT')
-        func_core.select_object_by_name(main_object.name)
-        bpy.ops.object.join()
-        bpy.ops.object.mode_set(mode='EDIT')
-        
-        bpy.context.scene.tool_settings.transform_pivot_point = pivot
-        bpy.context.scene.transform_orientation_slots[0].type = orient
-
-        return {'FINISHED'}
-    
-class Duckx_OT_MoveXTools(Operator):
-    bl_idname = "duckx_tools.movex_tools_operator"
-    bl_label = "Move X"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_icon = "EMPTY_ARROWS"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Move Between"
-
-    move_axis : EnumProperty(
-        name = "Axis",
-        items = [('x', "X", ""),('y', "Y", ""), ('z', "Z", "")]
-        )
-    
-    value : FloatProperty(name="Move Value", default=0.1, min=0)
-    invert : BoolProperty(name="Invert", default=False)
-    any_orient : BoolProperty(name="Any Orient", default=False)
-    
-    @classmethod
-    def poll(cls, context):
-        return context.mode == 'EDIT_MESH'
-    
-    def invoke(self, context, event):
-        if event.ctrl:
-            self.invert = True
-            return self.execute(context)
-        else:
-            return self.execute(context)
-        
     def draw(self, context):
         layout = self.layout
-        layout.use_property_split = True
-        layout.prop(self, "move_axis", expand=True)
-        layout.prop(self, "value")
-        layout.prop(self, "invert")
-        layout.prop(self, "any_orient")
+        col = layout.column()
+        col.label(text="Name from:")
+        row = col.row(align=True)
+        row.prop(self, "name_type", expand=True)
+        col = layout.column()
+        col.prop(self, "prefix")
 
-    
     def execute(self, context):
-        if self.any_orient:
-            obj = bpy.context.active_object
-            bm = bmesh.from_edit_mesh(obj.data)
-            if bpy.context.tool_settings.mesh_select_mode[0]:
-                selected = len([e for e in bm.verts if e.select])
-            elif bpy.context.tool_settings.mesh_select_mode[1]:
-                selected = len([e for e in bm.edges if e.select])
-            else:
-                selected = 0
-            pivot = bpy.context.scene.tool_settings.transform_pivot_point
-            if selected == 2:
-                if self.invert == True:
-                    value = self.value*-1
-                else:
-                    value = self.value
-                obj = bpy.context.active_object
-                if obj and obj.type == 'MESH' and bpy.context.mode == 'EDIT_MESH':
-                    bpy.ops.view3d.snap_cursor_to_active()
-                    bpy.ops.mesh.select_prev_item()
-                    #bpy.ops.view3d.snap_selected_to_cursor(use_offset=True)
-                    bpy.context.scene.tool_settings.transform_pivot_point = 'CURSOR'
-                    
-                    if self.move_axis == "x":
-                        bpy.ops.transform.resize(value=(0, 1, 1))
-                        bpy.ops.transform.translate(value=(value, 0, 0))
-                    elif self.move_axis == "y":
-                        bpy.ops.transform.resize(value=(1, 0, 1))
-                        bpy.ops.transform.translate(value=(0, value, 0))
-                    elif self.move_axis == "z":
-                        bpy.ops.transform.resize(value=(1, 1, 0))
-                        bpy.ops.transform.translate(value=(0, 0, value))
-            else:
-                print("Please select first and last Edge or Vertex")
-                self.report({"INFO"} ,"Please select first and last Edge or Vertex")
-                func_core.message_box("Please select first and last Edge or Vertex", "Move Tools", "ERROR")
-            bpy.context.scene.tool_settings.transform_pivot_point = pivot
+        name = ""
+        if self.name_type == 'COLLECTION':
+            # get the active collection name
+            active_collection = context.view_layer.active_layer_collection
+            if active_collection:
+                name = active_collection.name
         else:
-            oreint = bpy.context.scene.transform_orientation_slots[0].type
-            bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
-            obj = context.edit_object
-            me = obj.data
-            bm = bmesh.from_edit_mesh(me)
-            bm.edges.ensure_lookup_table()
+            # get the active object name
+            active_object = context.active_object
+            if active_object:
+                name = active_object.name
 
-            cursor_location = bpy.context.scene.cursor.location
-            
-            edge_list = []
-            for element in bm.select_history:
-                if isinstance(element, bmesh.types.BMEdge):
-                    edge_list.append([element, None])
-            
-            edge_list.reverse()
-            if len(edge_list) >= 1:
-                for i in range(len(edge_list)):
-                    bpy.ops.mesh.select_all(action='DESELECT')
-                    edge_list[i][0].select = True
-                    bpy.ops.view3d.snap_cursor_to_selected()
-                    
-                    edge_list[i][1] = bpy.context.scene.cursor.location.copy()
-                    if i > 0:
-                        v1 = edge_list[0][0].verts[0]
-                        v2 = edge_list[0][0].verts[1]
-                        a = (v1.co + v2.co) / 2.0
-                        v1 = edge_list[1][0].verts[0]
-                        v2 = edge_list[1][0].verts[1]
-                        b = (v1.co + v2.co) / 2.0
-                        print(a)
-                        print(edge_list[0][1])
-                        print(edge_list[1][1])
-                        co = a - b
-                        
-                        print(co)
-                        if self.move_axis == "x":
-                            bpy.ops.transform.translate(value=(co[0], 0, 0))
-                            if co[0] < 0:
-                                if self.invert:
-                                    bpy.ops.transform.translate(value=(-self.value, 0, 0))
-                                else:
-                                    bpy.ops.transform.translate(value=(self.value, 0, 0))
-                            else:
-                                if self.invert:
-                                    bpy.ops.transform.translate(value=(self.value, 0, 0))
-                                else:
-                                    bpy.ops.transform.translate(value=(-self.value, 0, 0))
-                        elif self.move_axis == "y":
-                            bpy.ops.transform.translate(value=(0, co[1], 0))
-                            if co[1] < 0:
-                                if self.invert:
-                                    bpy.ops.transform.translate(value=(0, -self.value, 0))
-                                else:
-                                    bpy.ops.transform.translate(value=(0, self.value, 0))
-                            else:
-                                if self.invert:
-                                    bpy.ops.transform.translate(value=(0, self.value, 0))
-                                else:
-                                    bpy.ops.transform.translate(value=(0, -self.value, 0))
-                        elif self.move_axis == "z":
-                            bpy.ops.transform.translate(value=(0, 0, co[2]))
-                            if co[2] < 0:
-                                if self.invert:
-                                    bpy.ops.transform.translate(value=(0, 0, -self.value))
-                                else:
-                                    bpy.ops.transform.translate(value=(0, 0, self.value))
-                            else:
-                                if self.invert:
-                                    bpy.ops.transform.translate(value=(0, 0, self.value))
-                                else:
-                                    bpy.ops.transform.translate(value=(0, 0, -self.value))
-            bmesh.update_edit_mesh(me)
-            bpy.context.scene.transform_orientation_slots[0].type = oreint
-        
-        
+        if context.mode == 'EDIT_MESH':
+            bpy.ops.view3d.snap_cursor_to_selected()
+            bpy.ops.duckx_tools.orienfromselect()
+            bpy.ops.object.mode_set(mode='OBJECT')
+        else:       
+            bpy.ops.view3d.snap_cursor_to_selected()
+            bpy.ops.duckx_tools.orienglobal()
+
+        bpy.ops.object.empty_add(type='ARROWS')
+        empty = context.active_object
+        empty.name = self.prefix + name
+        bpy.ops.transform.transform(mode='ALIGN')
 
         return {'FINISHED'}
     
-class Duckx_OT_ScaleFromActive(Operator):
-    bl_idname = "duckx_tools.scale_from_active_operator"
-    bl_label = "Scale From Active"
+class Duckx_OT_ScaleZero(Operator):
+    bl_idname = "duckx_tools.scale_zero"
+    bl_label = "Scale to Zero"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_icon = "EMPTY_ARROWS"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Scale From Active Selected"
+    bl_description = "Scale selected to zero"
+    bl_options = {'REGISTER', 'UNDO'}
 
-    action : EnumProperty(
-        name = "Property",
-        items = [('x', "X", ""),('y', "Y", ""), ('z', "Z", "")]
-        )
-    
-    value : FloatProperty(name="Move Value", default=0.1, min=0)
-    minus : BoolProperty(name="Minus", default=True)
-    
     @classmethod
     def poll(cls, context):
-        return context.mode == 'EDIT_MESH'
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')
     
     def execute(self, context):
         pivot = bpy.context.scene.tool_settings.transform_pivot_point
         orient = bpy.context.scene.transform_orientation_slots[0].type
-
-        
-        
-        bpy.context.scene.tool_settings.transform_pivot_point = 'ACTIVE_ELEMENT'
-        bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
-        bpy.ops.mesh.select_prev_item()
-        
-        
-        bpy.context.scene.transform_orientation_slots[0].type = orient
+        if not context.area.type == 'IMAGE_EDITOR':
+            bpy.context.scene.tool_settings.transform_pivot_point = 'BOUNDING_BOX_CENTER'
+            bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
+            bpy.ops.transform.resize(value=(0, 0, 0))
+            bpy.ops.mesh.merge(type='CENTER')
+        else:
+            bpy.ops.transform.resize(value=(0, 0, 0))
+            bpy.ops.uv.weld()
         bpy.context.scene.tool_settings.transform_pivot_point = pivot
-
+        bpy.context.scene.transform_orientation_slots[0].type = orient
         return {'FINISHED'}
-
-class Duckx_OT_RemoveLoopRing(Operator):
-    bl_idname = "duckx_tools.remove_loop_operator"
-    bl_label = "Remove Loop Ring"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_icon = "EMPTY_ARROWS"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Select geometry that has similar certain properties to the ones selected"
-
-    action : EnumProperty(
-        name = "Property",
-        items = [("loop", "Loop", ""),
-                 ("ring", "Ring", ""),
-                 ("loop_ring", "Loop Ring", "")
-                 ]
-    )
-    loop : IntProperty(name="Loop", default=100, min=0)
-    delete : BoolProperty(name="Delete", default=False)
-    def execute(self, context):
-        for i in range(self.loop): 
-            bpy.ops.mesh.select_next_item()
         
-        if self.action == "loop":
-            bpy.ops.mesh.loop_multi_select(ring=False)
-        elif self.action == "ring":
-            bpy.ops.mesh.loop_multi_select(ring=True)
-        elif self.action == "loop_ring":
-            bpy.ops.mesh.loop_multi_select(ring=False)
-            bpy.ops.mesh.loop_multi_select(ring=True)
-        
-        mode = bpy.context.tool_settings.mesh_select_mode[:]
-        #print(bpy.context.tool_settings.mesh_select_mode[:])
-        # obj = bpy.context.active_object
-        if self.delete:
-            if mode[0]:
-                bpy.ops.mesh.dissolve_verts()
-            elif mode[1]:
-                bpy.ops.mesh.dissolve_edges()
-            elif mode[2]:
-                bpy.ops.mesh.dissolve_faces()
-        
-        return {'FINISHED'}
-    
-class Duckx_OT_RemoveLoopRing(Operator):
-    bl_idname = "duckx_tools.remove_loop_ring_operator"
-    bl_label = "Remove Loop Ring"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_icon = "EMPTY_ARROWS"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Select geometry that has similar certain properties to the ones selected"
-
-    action : EnumProperty(
-        name = "Property",
-        items = [("loop", "Loop", ""),
-                 ("ring", "Ring", ""),
-                 ("loop_ring", "Loop Ring", "")
-                 ]
-    )
-    loop : IntProperty(name="Loop", default=100, min=0)
-    delete : BoolProperty(name="Delete", default=False)
-    def execute(self, context):
-        for i in range(self.loop): 
-            bpy.ops.mesh.select_next_item()
-        
-        if self.action == "loop":
-            bpy.ops.mesh.loop_multi_select(ring=False)
-        elif self.action == "ring":
-            bpy.ops.mesh.loop_multi_select(ring=True)
-        elif self.action == "loop_ring":
-            bpy.ops.mesh.loop_multi_select(ring=False)
-            bpy.ops.mesh.loop_multi_select(ring=True)
-        
-        mode = bpy.context.tool_settings.mesh_select_mode[:]
-        #print(bpy.context.tool_settings.mesh_select_mode[:])
-        # obj = bpy.context.active_object
-        if self.delete:
-            if mode[0]:
-                bpy.ops.mesh.dissolve_verts()
-            elif mode[1]:
-                bpy.ops.mesh.dissolve_edges()
-            elif mode[2]:
-                bpy.ops.mesh.dissolve_faces()
-        
-        return {'FINISHED'}
-    
-class Duckx_OT_InvertSeam(Operator):
-    bl_idname = "duckx_tools.invert_seam_operator"
-    bl_label = "Invert Seam"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_icon = "SHADERFX"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Invert UV seam from edge selected"
-
-    def execute(self, context):
-        obj = context.edit_object
-        me = obj.data
-
-        bm = bmesh.from_edit_mesh(me)
-        bm.faces.ensure_lookup_table()  # Ensure face data is updated
-
-        for edge in bm.edges:
-            if edge.select:
-                edge.seam = not edge.seam
-                
-
-        bmesh.update_edit_mesh(me)
-        return {'FINISHED'}
-    
-class Duckx_OT_InvertInLooseParts(Operator):
-    bl_idname = "duckx_tools.invert_in_loose_parts_operator"
-    bl_label = "Invert In Loose Parts"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_icon = "SHADERFX"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Invert selection In Loose Parts"
-
-    def execute(self, context):
-        
-        obj = context.edit_object
-        me = obj.data
-
-        bm = bmesh.from_edit_mesh(me)
-        bm.faces.ensure_lookup_table()  # Ensure face data is updated
-
-        faces_a = [] 
-        faces_b = []
-        for face in bm.faces:
-            if face.select:
-                faces_a.append(face)
-        bpy.ops.mesh.select_all(action='SELECT')
-        for face in bm.faces:
-            if face.select:
-                faces_b.append(face)
-        bpy.ops.mesh.select_all(action='DESELECT')
-        for face in faces_a:
-            face.select = True
-        bpy.ops.mesh.select_linked(delimit={'NORMAL'})
-        bpy.ops.mesh.hide(unselected=True)
-        bpy.ops.mesh.select_all(action='DESELECT')
-        for face in faces_a:
-            face.select = True
-        bpy.ops.mesh.select_all(action='INVERT')
-        faces_a.clear()
-        for face in bm.faces:
-            if face.select:
-                faces_a.append(face)
-        bpy.ops.mesh.reveal()
-        bpy.ops.mesh.select_all(action='DESELECT')
-        for face in faces_b:
-            face.select = True
-        bpy.ops.mesh.hide(unselected=True)
-        bpy.ops.mesh.select_all(action='DESELECT')
-        for face in faces_a:
-            face.select = True
-        bmesh.update_edit_mesh(me)
-        return {'FINISHED'}
-    
-class Duckx_OT_MoveVertexToActive(Operator):
-    bl_idname = "duckx_tools.move_vert_to_active_operator"
-    bl_label = "Move Vertex To Active"
+class Duckx_OT_CoupleMergeVertex(Operator):
+    bl_idname = "duckx_tools.couple_merge_vertex"
+    bl_label = "Couple Merge Vertex"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_icon = "ARROW_LEFTRIGHT"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Multiple Couple Merge Vertex"
+    bl_description = "Multiple Couple Merge Vertex \nPlease Select Vertex > 21"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH' and
+                context.tool_settings.mesh_select_mode[0] and
+                context.object.data.total_vert_sel > 1)
 
     def execute(self, context):
-        # obj = bpy.context.active_object
-            
-        # vertex_list = func_core.selected_vertexs(obj)
-        # a_vert_index, a_vert_co = func_core.active_vertex()
-        # print(a_vert_index)
-        # print(a_vert_co)
-        # bpy.ops.mesh.select_prev_item()
-        # b_vert_index, b_vert_co = func_core.active_vertex()
-        # print(b_vert_index)
-        # print(b_vert_co)
-        # if a_vert_co and b_vert_co != None:
-        #     local = a_vert_co - b_vert_co
-        #     print(f"New location: {local}")
-        #     bpy.ops.transform.translate(value=(local), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL')
-
-        # bpy.ops.mesh.select_all(action='DESELECT')
-        # func_core.select_vertexs(obj, vertex_list)
-        # bpy.ops.duckx_tools.utilities_operator(action="Scale 0")
         obj = bpy.context.active_object
         me = obj.data
         bm = bmesh.from_edit_mesh(me)
@@ -631,140 +135,363 @@ class Duckx_OT_MoveVertexToActive(Operator):
         bmesh.update_edit_mesh(me)
         return {'FINISHED'}
 
-class Duckx_OT_SelectByDistance(Operator):
-    bl_idname = "duckx_tools.select_by_distance_operator"
-    bl_label = "Select By Distance"
+class Duckx_OT_DuplicateAndSeparate(Operator):
+    bl_idname = "duckx_tools.duplicate_and_separate"
+    bl_label = "Duplicate and Separate"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_icon = "FIXED_SIZE"
+    bl_icon = "UV_DATA"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Select By Distance and Next"
+    bl_description = "Manage UV Maps \nPlease Select Vertex, Edge or Face"
 
-    distance : FloatProperty(name="Distance", precision=5)
-    threshold : FloatProperty(name="Threshold", default=0.000, precision=5, step=0.0010)
-    
     @classmethod
     def poll(cls, context):
-        return context.mode == 'EDIT_MESH'
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH' and
+                (context.object.data.total_vert_sel > 0 or 
+                 context.object.data.total_edge_sel > 0 or 
+                 context.object.data.total_face_sel > 0))    
+
+    def execute(self, context):
+        bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'RANDOM', "proportional_size":0.179859, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_elements":{'VERTEX'}, "use_snap_project":False, "snap_target":'CLOSEST', "use_snap_self":True, "use_snap_edit":True, "use_snap_nonedit":True, "use_snap_selectable":False, "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "view2d_edge_pan":False, "release_confirm":False, "use_accurate":False, "use_automerge_and_split":False})
+        bpy.ops.mesh.separate(type='SELECTED')
+        bpy.ops.object.editmode_toggle()
+        obj = context.object
+        func_core.deselect_objects_by_name(obj.name)
+        selected_objects = bpy.context.selected_objects
+        for obj in selected_objects:
+            bpy.context.view_layer.objects.active = obj
+        return {'FINISHED'}
+
+class Duckx_OT_OriginFromSelection(Operator):
+    bl_idname = "duckx_tools.origin_from_selection"
+    bl_label = "Origin from Selection"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "ORIGIN"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Set Object Origin to Selection"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_cursor_to_selected()
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+        return {'FINISHED'}
+
+
+class Duckx_OT_BoundaryTools(Operator):
+    bl_idname = "duckx_tools.boundary_tools"
+    bl_label = "Boundary Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "BORDER_RECT"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Select Boundary Vertices - Press 1: Select, 2: Mark Sharp, 3: Clear Sharp, ESC: Cancel"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')
+
+    action : EnumProperty(name="Action",
+                          items=[
+            ('SELECT', "Select", "Select Boundary Vertices"),
+            ('MARK_SHARP', "Mark Sharp", "Mark Boundary Vertices as Sharp"),
+            ('CLEAR_SHARP', "Clear Sharp", "Clear Sharp Mark from Boundary Vertices")
+        ],
+        default='SELECT'
+    )
+
+    def modal(self, context, event):
+        # แสดงข้อความใน header
+        context.area.header_text_set("Boundary Tools - Press [1]: Select, [2]: Mark Sharp, [3]: Clear Sharp, ESC: Cancel")
+        
+        if event.type in {'LEFTMOUSE', 'RIGHTMOUSE', 'ESC'}:
+            # ยกเลิกการทำงาน
+            context.area.header_text_set(None)
+            return {'CANCELLED'}
+        
+        elif event.type == 'ONE' and event.value == 'PRESS':
+            # กด 1 - Select Boundary
+            self.action = 'SELECT'
+            self.execute_action(context)
+            context.area.header_text_set(None)
+            return {'FINISHED'}
+            
+        elif event.type == 'TWO' and event.value == 'PRESS':
+            # กด 2 - Mark Sharp
+            self.action = 'MARK_SHARP'
+            self.execute_action(context)
+            context.area.header_text_set(None)
+            return {'FINISHED'}
+            
+        elif event.type == 'THREE' and event.value == 'PRESS':
+            # กด 3 - Clear Sharp
+            self.action = 'CLEAR_SHARP'
+            self.execute_action(context)
+            context.area.header_text_set(None)
+            return {'FINISHED'}
+        
+        # ส่งต่อ event อื่นๆ
+        return {'PASS_THROUGH'}
+
+    def execute_action(self, context):
+        """ทำการ execute action ที่เลือก"""
+        if context.object and context.object.type == 'MESH':
+            if context.mode == 'EDIT_MESH':
+                if self.action == 'SELECT':
+                    bpy.ops.mesh.region_to_loop()
+                    self.report({'INFO'}, "Boundary vertices selected")
+                elif self.action == 'MARK_SHARP':
+                    bpy.ops.mesh.region_to_loop()
+                    bpy.ops.mesh.mark_sharp()
+                    self.report({'INFO'}, "Boundary edges marked sharp")
+                elif self.action == 'CLEAR_SHARP':
+                    bpy.ops.mesh.region_to_loop()
+                    bpy.ops.mesh.mark_sharp(clear=True)
+                    self.report({'INFO'}, "Sharp marks cleared from boundary edges")
+            else:
+                self.report({'WARNING'}, "Must be in Edit Mode")
+        else:
+            self.report({'WARNING'}, "No mesh object selected")
+
+    def invoke(self, context, event):
+        # เริ่ม modal mode
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        # ถ้าเรียกจาก UI หรือ command line
+        self.execute_action(context)
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+        row.prop(self, "action", expand=True)
+
+    
+class Duckx_OT_InvertInLooseParts(Operator):
+    bl_idname = "duckx_tools.invert_in_loose_parts"
+    bl_label = "Invert In Loose Parts"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "SHADERFX"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Invert selection In Loose Parts"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')
 
     def execute(self, context):
         obj = context.edit_object
         me = obj.data
-
         bm = bmesh.from_edit_mesh(me)
-        bm.faces.ensure_lookup_table()  # Ensure face data is updated
+        
+        # Ensure all lookup tables are updated
+        bm.verts.ensure_lookup_table()
+        bm.edges.ensure_lookup_table()
+        bm.faces.ensure_lookup_table()
 
-        if bpy.context.tool_settings.mesh_select_mode[2]:
-            face_list = []
+        # Get current selection mode
+        select_mode = context.tool_settings.mesh_select_mode[:]
+        
+        # Store original selection based on selection mode
+        original_selection = []
+        all_elements = []
+        
+        if select_mode[0]:  # Vertex mode
+            for vert in bm.verts:
+                if vert.select:
+                    original_selection.append(vert)
+            all_elements = list(bm.verts)
+        elif select_mode[1]:  # Edge mode
+            for edge in bm.edges:
+                if edge.select:
+                    original_selection.append(edge)
+            all_elements = list(bm.edges)
+        elif select_mode[2]:  # Face mode
             for face in bm.faces:
                 if face.select:
-                    face_list.append(face)
-            if len(face_list) > 1:
-                a = face_list[0].calc_center_median().length
-                print(a)
-                b = face_list[-1].calc_center_median().length
-                print(b)
-                self.distance = round(a - b, 5)
-                print(abs(round(a - b, 5)))
-                # for face in bm.faces:
-                #     new_distance = round(b - face.calc_center_median().length, 5)
-                #     # print(new_distance, round(self.distance - self.threshold, 5))
-                #     print(new_distance, round(self.distance, 5))
-                #     if new_distance >= round(self.distance, 5):
-                #         print(new_distance)
-                # #         face.select = True
-                # # b = face.calc_center_median().length
+                    original_selection.append(face)
+            all_elements = list(bm.faces)
 
+        # Store all elements for later comparison
+        bpy.ops.mesh.select_all(action='SELECT')
+        all_selected_elements = []
+        
+        if select_mode[0]:  # Vertex mode
+            for vert in bm.verts:
+                if vert.select:
+                    all_selected_elements.append(vert)
+        elif select_mode[1]:  # Edge mode
+            for edge in bm.edges:
+                if edge.select:
+                    all_selected_elements.append(edge)
+        elif select_mode[2]:  # Face mode
+            for face in bm.faces:
+                if face.select:
+                    all_selected_elements.append(face)
+
+        # Deselect all and restore original selection
+        bpy.ops.mesh.select_all(action='DESELECT')
+        for element in original_selection:
+            element.select = True
+
+        # Select linked elements (this works for all selection modes)
+        bpy.ops.mesh.select_linked(delimit={'NORMAL'})
+        
+        # Hide unselected elements
+        bpy.ops.mesh.hide(unselected=True)
+        
+        # Deselect all and restore original selection
+        bpy.ops.mesh.select_all(action='DESELECT')
+        for element in original_selection:
+            if not element.hide:  # Only select if not hidden
+                element.select = True
+
+        # Invert selection within visible elements
+        bpy.ops.mesh.select_all(action='INVERT')
+        
+        # Store inverted selection
+        inverted_selection = []
+        if select_mode[0]:  # Vertex mode
+            for vert in bm.verts:
+                if vert.select and not vert.hide:
+                    inverted_selection.append(vert)
+        elif select_mode[1]:  # Edge mode
+            for edge in bm.edges:
+                if edge.select and not edge.hide:
+                    inverted_selection.append(edge)
+        elif select_mode[2]:  # Face mode
+            for face in bm.faces:
+                if face.select and not face.hide:
+                    inverted_selection.append(face)
+
+        # Reveal all elements
+        bpy.ops.mesh.reveal()
+        
+        # Select all elements
+        bpy.ops.mesh.select_all(action='SELECT')
+        for element in all_selected_elements:
+            element.select = True
+            
+        # Hide unselected (show only the loose parts we want to work with)
+        bpy.ops.mesh.hide(unselected=True)
+        
+        # Deselect all and apply inverted selection
+        bpy.ops.mesh.select_all(action='DESELECT')
+        for element in inverted_selection:
+            if not element.hide:  # Only select if not hidden
+                element.select = True
+
+        # Update the mesh
         bmesh.update_edit_mesh(me)
+        
+        return {'FINISHED'}
+    
+class Duckx_OT_RemoveLoopRing(Operator):
+    bl_idname = "duckx_tools.remove_loop_ring"
+    bl_label = "Remove Loop Ring"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "EMPTY_ARROWS"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "Select geometry that has similar certain properties to the ones selected"
+
+    action : EnumProperty(
+        name = "Property",
+        items = [("loop", "Loop", ""),
+                 ("ring", "Ring", ""),
+                 ("loop_ring", "Loop Ring", "")
+                 ]
+    )
+    loop : IntProperty(name="Loop", default=100, min=0)
+    delete : BoolProperty(name="Delete", default=False)
+    def execute(self, context):
+        for i in range(self.loop): 
+            bpy.ops.mesh.select_next_item()
+        
+        if self.action == "loop":
+            bpy.ops.mesh.loop_multi_select(ring=False)
+        elif self.action == "ring":
+            bpy.ops.mesh.loop_multi_select(ring=True)
+        elif self.action == "loop_ring":
+            bpy.ops.mesh.loop_multi_select(ring=False)
+            bpy.ops.mesh.loop_multi_select(ring=True)
+        
+        mode = bpy.context.tool_settings.mesh_select_mode[:]
+        #print(bpy.context.tool_settings.mesh_select_mode[:])
+        # obj = bpy.context.active_object
+        if self.delete:
+            if mode[0]:
+                bpy.ops.mesh.dissolve_verts()
+            elif mode[1]:
+                bpy.ops.mesh.dissolve_edges()
+            elif mode[2]:
+                bpy.ops.mesh.dissolve_faces()
+        
         return {'FINISHED'}
 
-class Duckx_OT_Utilities(Operator):
-    bl_idname = "duckx_tools.utilities_operator"
+class Duckx_OT_CorrectFace(Operator):
+    bl_idname = "duckx_tools.correct_face_attributes"
+    bl_label = "Correct face attributes"
+
+    def execute(self, context):
+        if bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
+            bpy.context.scene.tool_settings.use_transform_correct_face_attributes = False
+        else:
+            bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
+        return {'FINISHED'}
+    
+class Duckx_OT_DeleteLooseParts(Operator):
+    bl_idname = "duckx_tools.delete_loose_parts"
     bl_label = "Utilities Tools"
     bl_description = "Utilities Tools"
 
-    action : StringProperty(name="Action")
 
     def execute(self, context):
-        action = self.action
-        scene = context.scene
-        duckx_tools = scene.duckx_tools
-        
-        if action == "Scale 0":
-            pivot = bpy.context.scene.tool_settings.transform_pivot_point
-            orient = bpy.context.scene.transform_orientation_slots[0].type
-            if not context.area.type == 'IMAGE_EDITOR':
-                bpy.context.scene.tool_settings.transform_pivot_point = 'BOUNDING_BOX_CENTER'
-                bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
-                bpy.ops.transform.resize(value=(0, 0, 0))
-                bpy.ops.mesh.merge(type='CENTER')
-            else:
-                bpy.ops.transform.resize(value=(0, 0, 0))
-                bpy.ops.uv.weld()
-            bpy.context.scene.tool_settings.transform_pivot_point = pivot
-            bpy.context.scene.transform_orientation_slots[0].type = orient
-        
-        elif action == "Origin to selection":
-            bpy.ops.view3d.snap_cursor_to_selected()
-            bpy.ops.object.editmode_toggle()
-            bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
-        
-        elif action == "Boundary Sharp":
-            bpy.ops.mesh.region_to_loop()
-            bpy.ops.mesh.mark_sharp()
-            
-        elif action == "Deparate":
-            bpy.ops.mesh.duplicate_move(MESH_OT_duplicate={"mode":1}, TRANSFORM_OT_translate={"value":(0, 0, 0), "orient_type":'GLOBAL', "orient_matrix":((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type":'GLOBAL', "constraint_axis":(False, False, False), "mirror":False, "use_proportional_edit":False, "proportional_edit_falloff":'RANDOM', "proportional_size":0.179859, "use_proportional_connected":False, "use_proportional_projected":False, "snap":False, "snap_elements":{'VERTEX'}, "use_snap_project":False, "snap_target":'CLOSEST', "use_snap_self":True, "use_snap_edit":True, "use_snap_nonedit":True, "use_snap_selectable":False, "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "cursor_transform":False, "texture_space":False, "remove_on_cancel":False, "view2d_edge_pan":False, "release_confirm":False, "use_accurate":False, "use_automerge_and_split":False})
-            bpy.ops.mesh.separate(type='SELECTED')
-            bpy.ops.object.editmode_toggle()
-            obj = context.object
-            func_core.deselect_objects_by_name(obj.name)
-            selected_objects = bpy.context.selected_objects
-            for obj in selected_objects:
-                bpy.context.view_layer.objects.active = obj
-
-        elif action == "Correct Face Att":
-            if bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
-                bpy.context.scene.tool_settings.use_transform_correct_face_attributes = False
-            else:
-                bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
-
-        elif action == "Delete Loose Part":
-            bpy.ops.mesh.select_linked(delimit={'NORMAL'})
-            bpy.ops.mesh.select_more()
-            bpy.ops.mesh.select_linked(delimit={'NORMAL'})
-            bpy.ops.mesh.select_more()
-            bpy.ops.mesh.select_linked(delimit={'NORMAL'})
-            bpy.ops.mesh.select_more()
-            bpy.ops.mesh.delete(type='FACE')
-        
-        elif action == "Edge Length":
-            #self.report({"ERROR"} , str(func_core.EdgeLength()))
-            func_core.clipboard(func_core.edge_length())
-            func_core.message_box(str(round(func_core.edge_length(), 3)), "Edge Length", "CON_DISTLIMIT")
-            
-            #func_core.move_selected_uv(1,1)
-            func_core.move_selected_uv_island(0,0)
-
+        bpy.ops.mesh.select_linked(delimit={'NORMAL'})
+        bpy.ops.mesh.select_more()
+        bpy.ops.mesh.select_linked(delimit={'NORMAL'})
+        bpy.ops.mesh.select_more()
+        bpy.ops.mesh.select_linked(delimit={'NORMAL'})
+        bpy.ops.mesh.select_more()
+        bpy.ops.mesh.delete(type='FACE')
         return {'FINISHED'}
     
-class Duckx_OT_RunScript(Operator):
-    bl_idname = "duckx_tools.run_script_operator"
-    bl_label = "Run Script"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Run Script"
+class Duckx_OT_EdgeLength(Operator):
+    bl_idname = "duckx_tools.edge_length"
+    bl_label = "Utilities Tools"
+    bl_description = "Utilities Tools"
 
-    file_name : StringProperty(name="File")
 
     def execute(self, context):
-        text_block = bpy.data.texts.get(self.file_name)
-        exec(text_block.as_string())
+        msg, err = func_core.edge_length(context)
+        if err:
+            self.report({'WARNING'}, err)
+            return {'CANCELLED'}
+
+        try:
+            func_core.message_box(msg, "Edge Length", "CON_DISTLIMIT")
+        except Exception:
+            self.report({'INFO'}, msg)
         return {'FINISHED'}
-    
+            
+
 class Duckx_OT_ConsoleCommand(Operator):
-    bl_idname = "duckx_tools.console_command_operator"
+    bl_idname = "duckx_tools.console_command"
     bl_label = "Console Command"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -794,13 +521,44 @@ class Duckx_OT_ConsoleCommand(Operator):
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
 
+def draw_panel_empty(self, context, layout, props):
+    row = layout.row(align=True)
+    row.operator("duckx_tools.add_empty", text="Add Empty", icon=bl_icons("EMPTY_ARROWS"))
+    return row
 
+def draw_panel_scale_zero(self, context, layout, props):
+    row = layout.row(align=True)
+    col = row.column(align=True)
+    col.operator("duckx_tools.scale_zero", text="Scale 0", icon=bl_icons("DOT"))
+    col.operator("duckx_tools.couple_merge_vertex", text="Couple Merge Vertex")
+    col = row.column(align=True)
+    col.operator("duckx_tools.duplicate_and_separate", text="Dup & Sep", icon=bl_icons("DUPLICATE"))
+    col.operator("duckx_tools.origin_from_selection", text="Origin From Select")
+    return layout
+
+def draw_panel_boundary_tools(self, context, layout, props):
+    row = layout.row(align=True)
+    col = row.column(align=True)
+    col.operator("duckx_tools.boundary_tools", text="Boundary Tools", icon=bl_icons("MESH_PLANE")).action = 'SELECT'
+    col.operator("duckx_tools.invert_in_loose_parts", text="Invert In Loose Parts", icon=bl_icons("MOD_EXPLODE"))
+    return layout
+
+
+def draw_expand_panel(layself, context, layout, propsout):
+    row = layout.row(align=True)
+    row.operator("duckx_tools.console_command", text="Run Command", icon="CONSOLE")
+    return row
     
-classes = [Duckx_OT_ToggleProp, Duckx_OT_ConvexTools, Duckx_OT_BoxFromMesh, Duckx_OT_MeshToBox,
-           Duckx_OT_MoveXTools, Duckx_OT_ScaleFromActive, Duckx_OT_RemoveLoopRing, Duckx_OT_InvertSeam,
-           Duckx_OT_InvertInLooseParts, Duckx_OT_SelectByDistance, Duckx_OT_RunScript,
-           Duckx_OT_MoveVertexToActive, Duckx_OT_Utilities, Duckx_OT_ConsoleCommand]
-    
+add_panel("Add_Empty", draw_panel_empty)
+add_panel("Scale_Zero", draw_panel_scale_zero)
+add_panel("Boundary_Tools", draw_panel_boundary_tools)
+add_expand_panel("Console", draw_expand_panel)
+
+classes = [Duckx_OT_AddEmpty, Duckx_OT_ScaleZero, Duckx_OT_CoupleMergeVertex, Duckx_OT_DuplicateAndSeparate, 
+           Duckx_OT_OriginFromSelection, Duckx_OT_BoundaryTools, Duckx_OT_InvertInLooseParts,
+           Duckx_OT_RemoveLoopRing, Duckx_OT_CorrectFace, Duckx_OT_DeleteLooseParts, Duckx_OT_EdgeLength,
+           Duckx_OT_ConsoleCommand]
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)

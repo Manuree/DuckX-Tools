@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 from bpy.types import (Context, Event, Operator)
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
@@ -6,15 +7,17 @@ from . import func_core
 import math
 import random
 
-class Duckx_OT_ActiveUVMap(Operator):
-    bl_idname = "duckx_tools.active_uv_map_operator"
+from ..ui import add_panel, add_expand_panel
+
+class Duckx_OT_UVMapManager(Operator):
+    bl_idname = "duckx_tools.uv_map_manager"
     bl_label = "UV Map"
     bl_description = "CLICK for Active UVMaps \nSHIFT CLICK for rename \nCTRL CLICK for New \nALT CLICK for remove UV Map"
 
     action : StringProperty(name="Action")
-    edit = False
     
-    
+    old_name: StringProperty()  # เพิ่ม property เก็บชื่อเดิม
+
     @classmethod
     def poll(cls, context):
         selected_objects = context.selected_objects
@@ -31,29 +34,23 @@ class Duckx_OT_ActiveUVMap(Operator):
         return False
     
     def invoke(self, context, event):
-        parts = self.action.split(':>')
+        action = self.action.split(':>')
         objs = context.selected_objects
-        if event.shift and "duckx_uvset:>" in self.action:
-            self.edit = True
+        if event.shift:
+            self.action = f"uvrename:>{action[1]}:>{action[2]}"
+            # เก็บชื่อเดิมไว้
+            target_index = int(action[1])
+            self.old_name = context.active_object.data.uv_layers[target_index].name
             for obj in objs:
                 if obj.type == "MESH":
-                    obj.data.uv_layers.active_index = int(parts[1])
-                    for uv_layer in obj.data.uv_layers:
-                        if uv_layer.name == parts[2]:
-                            uv_layer.active_render = True
-                            break
+                    obj.data.uv_layers.active_index = target_index
             wm = context.window_manager
             return wm.invoke_props_dialog(self)
-        elif event.alt and "duckx_uvset:>" in self.action:
-            bpy.ops.duckx_tools.delete_uvmap_operator('INVOKE_DEFAULT', action=self.action)
-            # for obj in objs:
-            #     if obj.type == "MESH":
-            #         for uv_layer in obj.data.uv_layers:
-            #             if uv_layer.name == parts[2]:
-            #                 obj.data.uv_layers.remove(uv_layer)
+        elif event.alt:
+            bpy.ops.duckx_tools.delete_uvmap('INVOKE_DEFAULT', action=self.action)
             return self.execute(context)
-        elif event.ctrl and "duckx_uvset:>" in self.action:
-            self.action = "new"
+        elif event.ctrl:
+            self.action = "uvnew"
             return self.execute(context)
         else:
             return self.execute(context)
@@ -65,82 +62,59 @@ class Duckx_OT_ActiveUVMap(Operator):
         for uvmap in uvmaps:
             if context.active_object.data.uv_layers.active.name == uvmap.name:
                 row.prop(uvmap, "name", text="")
+        
     
     def execute(self, context):
-        action = self.action
-        scene = context.scene
-        duckx_tools = scene.duckx_tools
+        action = self.action.split(':>')
+        objs = context.selected_objects
+        active_object = context.active_object
+        print(action)
+
+        if action[0] == "uvactive":
+            for obj in objs:
+                if obj.type == "MESH":
+                    obj.data.uv_layers.active_index = int(action[1])
+                    for uv_layer in obj.data.uv_layers:
+                        if uv_layer.name == action[2]:
+                            uv_layer.active_render = True
+                            break
         
-        if action == "toggle":
-            objs = context.selected_objects
-            if objs:
-                for obj in objs:
-                    if obj.type == "MESH":
-                        uv_layer = obj.data.uv_layers.active
-                        if uv_layer:
-                            obj.data.uv_layers.active_index = (obj.data.uv_layers.active_index + 1) % len(obj.data.uv_layers)
-        elif action == "set":
-            for ob in context.selected_objects:
-                if ob.type == "MESH":
-                    if duckx_tools.uvmap_set_type == "index":
-                        if len(ob.data.uv_layers) < duckx_tools.uvmap_index:
-                            continue
-                        ob.data.uv_layers.active_index = duckx_tools.uvmap_index - 1
-                    if duckx_tools.uvmap_set_type == "name":
-                        for uv_layer in ob.data.uv_layers:
-                            if uv_layer.name == duckx_tools.uvmap_name:
-                                uv_layer.active = True
-                                break
-        elif "duckx_uvset:>" in action:
-            parts = action.split(':>')
-            print(parts[2])
-            objs = context.selected_objects
-            if not self.edit:
-                for obj in objs:
-                    if obj.type == "MESH":
-                        obj.data.uv_layers.active_index = int(parts[1])
-                        for uv_layer in obj.data.uv_layers:
-                            if uv_layer.name == parts[2]:
-                                uv_layer.active_render = True
-                                break
-            elif self.edit:
-                for obj in objs:
-                    if obj.type == "MESH":
-                        obj.data.uv_layers.active.name = context.active_object.data.uv_layers.active.name
- 
-        elif action == "new":
-            for ob in context.selected_objects:
-                if ob.type == "MESH":
-                    ob.data.uv_layers.new(name=duckx_tools.uvmap_name)
-                    ob.data.uv_layers.active_index = len(ob.data.uv_layers) - 1
-        elif action == "rename" and duckx_tools.uvmap_set_type == "name":
-            for ob in context.selected_objects:
-                if ob.type == "MESH":
-                    current_layer = ob.data.uv_layers.active_index
-                    ob.data.uv_layers.active_index = duckx_tools.uvmap_index - 1
-                    ob.data.uv_layers.active.name = duckx_tools.uvmap_name
-                    ob.data.uv_layers.active_index = current_layer
-        elif action == "del":
-            ob = context.active_object
-            for ob in context.selected_objects:
-                if ob.type == "MESH":
-                    if duckx_tools.uvmap_set_type == "index":
-                        if len(ob.data.uv_layers) >= duckx_tools.uvmap_index:
-                            ob.data.uv_layers.remove(ob.data.uv_layers[duckx_tools.uvmap_index - 1])
-                    if duckx_tools.uvmap_set_type == "name":
-                        for uv_layer in ob.data.uv_layers:
-                            if uv_layer.name == duckx_tools.uvmap_name:
-                                ob.data.uv_layers.remove(uv_layer)
-                                break
-            pass
+        elif action[0] == "uvnew":
+            for obj in objs:
+                if obj.type == "MESH":
+                    new_uv_layer = obj.data.uv_layers.new(name=f"UVMap_{len(obj.data.uv_layers)}")
+                    obj.data.uv_layers.active = new_uv_layer
+                    print(f"New UV Map created: {new_uv_layer.name}")
+        
+        elif action[0] == "uvrename":
+            # เก็บชื่อ UV Map ของ uv_layer ที่ active อยู่
+            new_name = active_object.data.uv_layers.active.name  # เพิ่ม .name ตรงนี้
+            target_index = int(action[1])
+            for obj in objs:
+                if obj.type == "MESH":
+                    if len(obj.data.uv_layers) > target_index:
+                        obj.data.uv_layers[target_index].name = new_name
+                        print(f"UV Map at index {target_index} renamed to: {new_name}")
+
         
         obj = bpy.context.active_object
         bpy.data.objects[obj.name].select_set(True)
         return {'FINISHED'}
     
+    def cancel(self, context):
+        # เมื่อกด cancel ให้คืนค่าชื่อเดิม
+        action = self.action.split(':>')
+        target_index = int(action[1])
+        objs = context.selected_objects
+        for obj in objs:
+            if obj.type == "MESH":
+                if len(obj.data.uv_layers) > target_index:
+                    obj.data.uv_layers[target_index].name = self.old_name
+        return None
+    
 class Duckx_OT_DeleteUVMap(bpy.types.Operator):
-    bl_idname = "duckx_tools.delete_uvmap_operator"
-    bl_label = "Delele UV Map"
+    bl_idname = "duckx_tools.delete_uvmap"
+    bl_label = "Delele UV Map by Name"
     bl_options = {'REGISTER', 'UNDO'}
 
     action : StringProperty(name="Action")
@@ -150,31 +124,65 @@ class Duckx_OT_DeleteUVMap(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
     
     def execute(self, context):
-        print("ddddddddd")
-        parts = self.action.split(':>')
+        action = self.action.split(':>')
         objs = context.selected_objects
+        print("Deleting UV Map:", action)
         for obj in objs:
             if obj.type == "MESH":
                 for uv_layer in obj.data.uv_layers:
-                    if uv_layer.name == parts[2]:
+                    if uv_layer.name == action[2]:
                         obj.data.uv_layers.remove(uv_layer)
+        obj = bpy.context.active_object
+        bpy.data.objects[obj.name].select_set(True)
         return {'FINISHED'}
     
-class Duckx_OT_UvRotation(Operator):
-    bl_idname = "duckx_tools.uvrotation_operator"
-    bl_label = "UV Rotation"
-    #bl_icon = "MOD_EXPLODE"
+class Duckx_OT_InvertSeam(Operator):
+    bl_idname = "duckx_tools.invert_seam"
+    bl_label = "Invert Seam"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
+    bl_icon = "SHADERFX"
     bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Rotation UV \nSHIFT CLICK for rotate from selected face"
+    bl_description = "Invert UV seam from edge selected"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')
+
+    def execute(self, context):
+        obj = context.edit_object
+        me = obj.data
+
+        bm = bmesh.from_edit_mesh(me)
+        bm.faces.ensure_lookup_table()  # Ensure face data is updated
+
+        for edge in bm.edges:
+            if edge.select:
+                edge.seam = not edge.seam
+                
+
+        bmesh.update_edit_mesh(me)
+        return {'FINISHED'}
+    
+class Duckx_OT_UVRotation(Operator):
+    bl_idname = "duckx_tools.uv_rotation"
+    bl_label = "UV Rotation"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_icon = "SHADERFX"
+    bl_options = {"REGISTER", "UNDO"}
+    bl_description = "[SHIFT CLICK] for rotate only selected"
 
     angle : FloatProperty(name="Angle")
     islands = True
-    
+
     @classmethod
     def poll(cls, context):
-        return context.mode == 'EDIT_MESH'
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')    
 
     def invoke(self, context, event):
         if event.shift:
@@ -223,105 +231,8 @@ class Duckx_OT_UvRotation(Operator):
         self.hold_shift = False
         return {'FINISHED'}
 
-    # def modal(self, context, event):
-    #     if event.type == 'LEFTMOUSE' and event.value == 'PRESS' and event.shift:
-    #         # Your operator's main logic here
-    #         print("Shift + Left Click detected!")
-    #         # Add your code to perform actions here
-
-    #         # Optional: End the operator after execution
-    #         return {'FINISHED'} 
-
-    #     elif event.type in {'RIGHTMOUSE', 'ESC'}:
-    #         # Cancel the operator if right-clicked or Esc is pressed
-    #         return {'CANCELLED'}
-
-    #     # Keep the operator running in the background
-    #     return {'RUNNING_MODAL'}
-
-    # def invoke(self, context, event):
-    #     # Start the operator in modal mode
-    #     context.window_manager.modal_handler_add(self)
-    #     return {'RUNNING_MODAL'}
-
-class Duckx_OT_UVPadding(Operator):
-    bl_idname = "duckx_tools.uvpadding_operator"
-    bl_label = "Padding"
-    bl_icon = "MOD_EXPLODE"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Make UV Padding"
-
-    action : EnumProperty(
-        name = "Property",
-        items = [('more', "More", ""),
-                 ('less', "Less", "")
-                 ]
-    )
-    factor : IntProperty(name="Factor", min=1, default=1)
-    
-
-    def execute(self, context):
-        bpy.context.area.ui_type = 'UV'
-        bpy.context.scene.tool_settings.use_uv_select_sync = False
-        if self.action == "more":
-            for i in range(self.factor) :
-                bpy.context.space_data.pivot_point = 'CENTER'
-                scale = 1.01
-                bpy.ops.transform.resize(value=(scale, scale, scale))
-                bpy.context.space_data.pivot_point = 'INDIVIDUAL_ORIGINS'
-                scale = 0.9900990099009901
-                bpy.ops.transform.resize(value=(scale, scale, scale))
-                #bpy.ops.transform.translate(value=(-0.0033333, -0.0033333, 0), orient_type='GLOBAL')
-        elif self.action == "less":
-            for i in range(self.factor) :
-                bpy.context.space_data.pivot_point = 'CENTER'
-                scale = 0.9900990099009901
-                bpy.ops.transform.resize(value=(scale, scale, scale))
-                bpy.context.space_data.pivot_point = 'INDIVIDUAL_ORIGINS'
-                scale = 1.01
-                bpy.ops.transform.resize(value=(scale, scale, scale))
-        bpy.context.space_data.pivot_point = 'CENTER'
-            
-        return {'FINISHED'}
-    
-class Duckx_OT_UvUnwarpHere(Operator):
-    bl_idname = "duckx_tools.uv_unwarp_here_operator"
-    bl_label = "UV Unwarp Here"
-    bl_icon = "UV"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_options = {"REGISTER", "UNDO"}
-    bl_description = "Rotation UV"
-
-    keepTexel : BoolProperty(name="Keep Texel", default=True)
-    
-    def execute(self, context):
-        bpy.ops.uv.snap_cursor(target='SELECTED')
-        
-        if self.keepTexel:
-            try:
-                bpy.ops.object.texel_density_check()
-                bpy.ops.object.calculate_to_set()
-            except:
-                self.report({"INFO"} ,"Request Texel Density")
-
-        bpy.ops.uv.seams_from_islands()        
-        bpy.ops.uv.unwrap(fill_holes=False, margin=0)
-        bpy.ops.uv.align_rotation()
-        
-        if self.keepTexel:
-            try:
-                bpy.ops.object.texel_density_set()
-            except:
-                self.report({"INFO"} ,"Request Texel Density")
-                
-        bpy.ops.uv.snap_selected(target='CURSOR_OFFSET')
-        return {'FINISHED'}
-    
 class Duckx_OT_UVPositionRandom(Operator):
-    bl_idname = "duckx_tools.uv_position_random_operator"
+    bl_idname = "duckx_tools.uv_position_random"
     bl_label = "UV Random Position"
     bl_icon = "UV"
     bl_space_type = "VIEW_3D"
@@ -365,21 +276,58 @@ class Duckx_OT_UVPositionRandom(Operator):
                 
         return {'FINISHED'}
 
+        
+def draw_uv_map_manager(self, context, layout, properties):
+    active_object = context.active_object
+    props = properties
+    if active_object and active_object.type == 'MESH':
+        box = layout.box()
+        row = box.row(align=True)
+        uv_active = False
+        for i, uv_layer in enumerate(active_object.data.uv_layers):
+            if active_object.data.uv_layers.active == uv_layer:
+                uv_active = True
+            else:
+                uv_active = False
+            if len(active_object.data.uv_layers) < 5:
+                row.operator("duckx_tools.uv_map_manager", text=uv_layer.name, depress=uv_active).action = f"uvactive:>{i}:>{uv_layer.name}"
+            else:
+                row.operator("duckx_tools.uv_map_manager", text=str(i+1), depress=uv_active).action = f"uvactive:>{i}:>{uv_layer.name}"
 
+def draw_invert_seam(self, context, layout, properties):
+    layout.operator("duckx_tools.invert_seam")
+
+def draw_uv_rotation(self, context, layout, properties):
+    box = layout.box()
+    row = box.row()
+    row.label(text="UV Rotation")
+    row.prop(properties, "uv_angle", text="")
+    row.operator("duckx_tools.uv_rotation", text="", icon="FILE_REFRESH").angle = properties.uv_angle
+    row = box.row()
+    row.operator("duckx_tools.uv_rotation", text="-90°").angle = -90
+    row.operator("duckx_tools.uv_rotation", text="+90°").angle = 90
+    row.operator("duckx_tools.uv_rotation", text="-45°").angle = -45
+    row.operator("duckx_tools.uv_rotation", text="+45°").angle = 45
+    row = box.row()
+    row.operator("duckx_tools.uv_rotation", text="180°").angle = 180
+
+add_panel("UV_Map_Manager", draw_uv_map_manager)
+add_panel("Invert Seam", draw_invert_seam)
+add_panel("UV Rotation", draw_uv_rotation)
     
 def register():
-    bpy.utils.register_class(Duckx_OT_ActiveUVMap)
+    bpy.utils.register_class(Duckx_OT_UVMapManager)
     bpy.utils.register_class(Duckx_OT_DeleteUVMap)
-    bpy.utils.register_class(Duckx_OT_UvRotation)
-    bpy.utils.register_class(Duckx_OT_UVPadding)
-    bpy.utils.register_class(Duckx_OT_UvUnwarpHere)
+    bpy.utils.register_class(Duckx_OT_InvertSeam)
+    bpy.utils.register_class(Duckx_OT_UVRotation)
     bpy.utils.register_class(Duckx_OT_UVPositionRandom)
+
         
     
 def unregister():
-    bpy.utils.unregister_class(Duckx_OT_ActiveUVMap)
+    bpy.utils.unregister_class(Duckx_OT_UVMapManager)
     bpy.utils.unregister_class(Duckx_OT_DeleteUVMap)
-    bpy.utils.unregister_class(Duckx_OT_UvRotation)
-    bpy.utils.unregister_class(Duckx_OT_UVPadding)
-    bpy.utils.unregister_class(Duckx_OT_UvUnwarpHere)
+    bpy.utils.unregister_class(Duckx_OT_InvertSeam)
+    bpy.utils.unregister_class(Duckx_OT_UVRotation)
     bpy.utils.unregister_class(Duckx_OT_UVPositionRandom)
+

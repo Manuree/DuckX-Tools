@@ -3,12 +3,15 @@ import bmesh
 from bpy.types import (Operator)
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
-class Duckx_OT_OrientSelect(Operator):
-    bl_idname = "duckx_tools.orienselect_operator"
-    bl_label = "Selection"
+from ..icon_reg import *
+from ..ui import add_panel, add_expand_panel
+
+class Duckx_OT_OrientFromSelect(Operator):
+    bl_idname = "duckx_tools.orienfromselect"
+    bl_label = "Orient From Selection"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_description = "Orientation Face for Decal alignment and axis"
+    bl_description = "Make Orientation from Selection"
     bl_options = {"REGISTER", "UNDO"}
     
     def execute(self, context):
@@ -29,9 +32,9 @@ class Duckx_OT_OrientSelect(Operator):
             bpy.context.scene.transform_orientation_slots[0].type = 'LOCAL'
 
         return {'FINISHED'}
-    
+
 class Duckx_OT_OrientGlobal(Operator):
-    bl_idname = "duckx_tools.orienglobal_operator"
+    bl_idname = "duckx_tools.orienglobal"
     bl_label = "Global"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -49,6 +52,13 @@ class Duckx_OT_OrientGlobal(Operator):
                 ('active', "Active", "")
                 ]
     )
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.label(text="Pivot:")
+        col.prop(self, "pivot", expand=True)
+
     
     def execute(self, context):
         if self.pivot == "bounding":
@@ -76,7 +86,7 @@ class Duckx_OT_OrientGlobal(Operator):
         return {'FINISHED'}
     
 class Duckx_OT_OrientAndPivot(Operator):
-    bl_idname = "duckx_tools.orien_and_pivot_operator"
+    bl_idname = "duckx_tools.orien_and_pivot"
     bl_label = "Orient And Pivot"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -84,42 +94,36 @@ class Duckx_OT_OrientAndPivot(Operator):
     bl_options = {"REGISTER", "UNDO"}
     bl_description = "Orientation and Pivot to 3D Cursor"
 
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None and context.active_object.type == 'MESH' and context.mode == 'EDIT_MESH'
+
     def execute(self, context):
-        obj = bpy.context.active_object
-        bm = bmesh.from_edit_mesh(obj.data)
-        edge_selected = []
-        edge_active = None
-        for edge in bm.edges:
-            if edge.select:
-                edge_selected.append(edge)
-        bpy.ops.mesh.select_prev_item()
-        bpy.ops.mesh.select_all(action='INVERT')
-        for edge in bm.edges:
-            if edge.select:
-                if edge in edge_selected:
-                    edge_active = edge
-        bpy.ops.mesh.select_all(action='DESELECT')
-        edge_active.select_set(True)
-        bpy.ops.duckx_tools.orienselect_operator()
-        bpy.ops.view3d.snap_cursor_to_selected()
+        bpy.ops.view3d.snap_cursor_to_active()
         bpy.context.scene.tool_settings.transform_pivot_point = 'CURSOR'
-        bpy.context.scene.tool_settings.use_transform_correct_face_attributes = False
-        bpy.ops.mesh.select_all(action='DESELECT')
-        edge_selected.remove(edge_active)
-        for edge in edge_selected:
-            edge.select_set(True)
+        bpy.context.scene.tool_settings.transform_pivot_point = 'ACTIVE_ELEMENT'
+        bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
+
 
         return {'FINISHED'}
-    
+
+def draw_panel(self, context, layout, properties):
+    col = layout.column(align=True)
+    row = col.row(align=True)
+    row.operator("duckx_tools.orienglobal", text="Global", icon=bl_icons("ORIENTATION_GLOBAL"))
+    row.operator("duckx_tools.orienfromselect", text="Select", icon=bl_icons("EMPTY_ARROWS"))
+    row.operator("duckx_tools.orien_and_pivot", text="Pivot", icon=bl_icons("PIVOT_CURSOR"))
+    return row
+
+add_panel("Orient Tools", draw_panel)
     
 def register():
-    bpy.utils.register_class(Duckx_OT_OrientSelect)
+    bpy.utils.register_class(Duckx_OT_OrientFromSelect)
     bpy.utils.register_class(Duckx_OT_OrientGlobal)
     bpy.utils.register_class(Duckx_OT_OrientAndPivot)
         
     
 def unregister():
-    bpy.utils.unregister_class(Duckx_OT_OrientSelect)
+    bpy.utils.unregister_class(Duckx_OT_OrientFromSelect)
     bpy.utils.unregister_class(Duckx_OT_OrientGlobal)
     bpy.utils.unregister_class(Duckx_OT_OrientAndPivot)
-        

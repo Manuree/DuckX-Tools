@@ -2,13 +2,15 @@ import bpy
 import bmesh
 import math
 
-from . import func_core
-
 from bpy.types import (Operator )
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
+from ..icon_reg import *
+from . import func_core
+from ..ui import add_panel, add_expand_panel
+
 class Duckx_OT_AlignToActive(Operator):
-    bl_idname = "duckx_tools.align_to_active_operator"
+    bl_idname = "duckx_tools.align_to_active"
     bl_label = "Align ToA ctive"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -24,6 +26,11 @@ class Duckx_OT_AlignToActive(Operator):
     ignore = False
     two_vetex = False
 
+    @classmethod
+    def poll(cls, context):
+        return (context.object is not None and 
+                context.object.type == 'MESH' and 
+                context.mode == 'EDIT_MESH')
 
     def invoke(self, context, event):
         self.flip = False
@@ -95,7 +102,24 @@ class Duckx_OT_AlignToActive(Operator):
         bpy.context.scene.transform_orientation_slots[0].type = orient
         return {'FINISHED'}
 
+def draw_align_tools(self, context, layout, props):
+    col = layout.column(align=True)
+    col.label(text="Align To Active")
+    row = col.row(align=True)
+    row.alignment = "CENTER"
+    row.scale_y = 1.5
+    row.scale_x = 5
+    bt = row.operator("duckx_tools.align_to_active", text="", icon_value=iconLib("giz_X"))
+    bt.axis = "x"
+    bt = row.operator("duckx_tools.align_to_active", text="", icon_value=iconLib("giz_Y"))
+    bt.axis = "y"
+    bt = row.operator("duckx_tools.align_to_active", text="", icon_value=iconLib("giz_Z"))
+    bt.axis = "z"
+    return layout
 
+
+
+add_expand_panel("Align", draw_align_tools, "MESH")
     
 def register():
     bpy.utils.register_class(Duckx_OT_AlignToActive)

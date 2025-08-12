@@ -6,7 +6,7 @@ from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVecto
 from . import func_core
 
 class Duckx_OT_MergeBySize(Operator):
-    bl_idname = "duckx_tools.merge_by_size_operator"
+    bl_idname = "duckx_tools.merge_by_size"
     bl_label = "Merge By Size"
     bl_icon = "LIGHTPROBE_PLANAR"
     bl_space_type = "VIEW_3D"
@@ -14,7 +14,7 @@ class Duckx_OT_MergeBySize(Operator):
     bl_options = {"REGISTER", "UNDO"}
     bl_description = "Merge By Size"
 
-    action : StringProperty(name="Action")
+    action : StringProperty(name="Action")  
     size : FloatProperty(name="Factor", min=0, step=0.0001, precision=6)
     offset : FloatProperty(name="Offset", step=0.001, precision=6)
     KeepSize : BoolProperty(name="Keep Size")

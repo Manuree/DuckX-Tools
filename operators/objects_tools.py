@@ -1,9 +1,11 @@
 import bpy
 
-from . import func_core
-
 from bpy.types import (Operator )
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
+
+from ..icon_reg import *
+from . import func_core
+from ..ui import add_panel, add_expand_panel
 
 class Duckx_OT_ObjectColors(Operator):
     bl_idname = "duckx_tools.object_colors"
@@ -23,6 +25,8 @@ class Duckx_OT_ObjectColors(Operator):
     def execute(self, context):
         scene = context.scene
         duckx_tools = scene.duckx_tools
+        bpy.context.space_data.shading.color_type = 'OBJECT'
+
         if self.action == "set":
             selected_objects = bpy.context.selected_objects
             for obj in selected_objects:
@@ -90,7 +94,7 @@ class Duckx_OT_ObjectWire(Operator):
         return {'FINISHED'}
     
 class Duckx_OT_DelCustomProp(Operator):
-    bl_idname = "duckx_tools.del_custom_prop_operator"
+    bl_idname = "duckx_tools.del_custom_prop"
     bl_label = "Delete All Custom Properties"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -119,6 +123,39 @@ class Duckx_OT_DelCustomProp(Operator):
 
         return {'FINISHED'}
 
+def draw_object_tools(self, context, layout, props):
+    active_object = context.active_object  
+    box = layout.box()
+    row = box.row()
+    row.label(text="Color")
+    row = box.row()
+    row.scale_x = 0.5
+    if active_object:
+        row.prop(context.object, "color", text="")
+    row.operator("duckx_tools.object_colors", text="", icon="TRIA_RIGHT").action = "pick"
+    row.prop(props, "obj_color", text="")
+    row.scale_x = 2
+    row.operator("duckx_tools.object_colors", text="", icon="SHADERFX").action = "set"
+    row = box.row()
+    row.operator("duckx_tools.object_colors", text="Select Similar Color").action = "select"
+    
+    #Objects Wireframe
+    box = layout.box()
+    row = box.row()
+    row.label(text="Wireframe")
+    row = box.row()
+    row.operator("duckx_tools.object_wire", text="Show/Hide").action = "toggle"
+    row.operator("duckx_tools.object_wire", text="Select").action = "select"
+    box = layout.box()
+    row = box.row()
+    row.label(text="Properties")
+    row = box.row()
+    row.operator("duckx_tools.del_custom_prop", text="Delete All Custom Properties", icon="CON_TRANSFORM")
+    return layout
+
+
+
+add_expand_panel("Object", draw_object_tools)
 
     
 def register():
