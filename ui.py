@@ -220,6 +220,7 @@ class DuckXMenu(Menu):
             else:
                 layout.operator("duckx_tools.correct_face_attributes", text="Correct Face", icon="CHECKBOX_DEHLT")
             layout.operator("duckx_tools.orienglobal", text="Orientation Global", icon="OBJECT_ORIGIN")
+            layout.operator("duckx_tools.orienfromselect", text="Select", icon=bl_icons("EMPTY_ARROWS"))
             
             if context.mode == 'EDIT_MESH':
                 layout.operator("duckx_tools.orienselect", text="Orientation Select", icon="TRACKER")
@@ -230,7 +231,8 @@ class DuckXMenu(Menu):
                 layout.operator_menu_enum("duckx_tools.remove_loop_ring", property="action", text="Remove Ring Loop", icon="PANEL_CLOSE")
                 layout.operator("duckx_tools.move_vert_to_activer", text="Move Vx At Last", icon="ARROW_LEFTRIGHT")
                 layout.separator()
-                layout.label(text="Merge by size")
+                layout.label(text="Merge")
+                layout.operator("duckx_tools.couple_merge_vertex", text="Couple Merge Vertex", icon=bl_icons"AUTOMERGE_ON")
                 try:
                     layout.operator("duckx_tools.merge_by_size", text="Face", icon="LIGHTPROBE_PLANAR").action = "face"
                 except:
