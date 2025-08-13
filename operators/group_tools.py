@@ -563,24 +563,15 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         return {'FINISHED'}
     
     def show_collections(self, context, collections):
-        print(self.hide_others)
-        # กลับสู่ OBJECT mode กัน error
-        try:
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except Exception:
-            pass
+        # 1) กลับสู่ OBJECT mode + เคลียร์ซ่อน/เลือก (เหมือนเดิม)
+        try: bpy.ops.object.mode_set(mode='OBJECT')
+        except Exception: pass
+        try: bpy.ops.object.hide_view_clear()
+        except Exception: pass
+        try: bpy.ops.object.select_all(action='DESELECT')
+        except Exception: pass
 
-        # เคลียร์การซ่อนของวัตถุ และยกเลิกการเลือก (ตามพฤติกรรมเดิม)
-        try:
-            bpy.ops.object.hide_view_clear()
-        except Exception:
-            pass
-        try:
-            bpy.ops.object.select_all(action='DESELECT')
-        except Exception:
-            pass
-
-        # --- สร้างรายชื่อ "ชื่อคอลเลกชัน" เป้าหมาย ---
+        # 2) สร้างรายชื่อคอลเลกชันเป้าหมายเป็นชื่อ
         target_names = []
         if collections:
             for c in collections:
@@ -590,54 +581,55 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         if not target_names:
             return {'FINISHED'}
 
-        # --- รวม hierarchy ของทุกคอลเลกชัน (เป็น "ชื่อ" ทั้งหมด) ---
+        # 3) รวม hierarchy เป็นชื่อคอลเลกชันที่ต้องคงไว้
         keep_names = set()
         for name in target_names:
             col = bpy.data.collections.get(name)
             if not col:
                 continue
-            # NOTE: ฟังก์ชันนี้ของคุณควรส่ง "ชื่อ" กลับมา
-            # ถ้าส่งเป็น object ก็ map เป็นชื่อให้หมด
-            hlist = func_core.get_hierarchy_collections(col)
-            for x in hlist:
+            for x in func_core.get_hierarchy_collections(col):
                 keep_names.add(x if isinstance(x, str) else getattr(x, "name", None))
             keep_names.add(name)
-
-        # ลบ None ที่อาจเล็ดรอด
         keep_names.discard(None)
-
         if not keep_names:
             return {'FINISHED'}
 
-        # --- ซ่อน/แสดงคอลเลกชันตาม hide_others ---
+        # 4) ซ่อน/โชว์คอลเลกชันตาม self.hide_others
         if getattr(self, "hide_others", False):
-            # ซ่อนทุกอันที่ "ไม่อยู่" ใน keep_names
             for coll in bpy.data.collections:
                 func_core.hide_collection(coll.name, hide_viewport=(coll.name not in keep_names))
         else:
-            # แค่ unhide เฉพาะที่ต้องคงไว้ ไม่ไปยุ่งตัวอื่น
             for name in keep_names:
                 func_core.hide_collection(name, hide_viewport=False)
 
-        # --- Unhide objects ในคอลเลกชันเป้าหมาย (รวมลูก) ---
+        # 5) เก็บอ็อบเจ็กต์จากคอลเลกชันเป้าหมายแบบ "รีเคอร์ซีฟ" (ไม่ใช้ all_objects)
+        def walk_collection(col, out):
+            for ob in col.objects:
+                out.add(ob)
+            for ch in col.children:
+                walk_collection(ch, out)
+
         shown = set()
         for name in target_names:
             col = bpy.data.collections.get(name)
             if not col:
                 continue
-            objs = getattr(col, "all_objects", None) or col.objects
-            for ob in objs:
-                if ob and ob not in shown:
-                    shown.add(ob)
-                    try:
-                        ob.hide_set(False)
-                        ob.select_set(True)
-                        bpy.context.view_layer.objects.active = ob
-                    except Exception:
-                        pass
-                    ob.hide_viewport = False
+            walk_collection(col, shown)
 
-        # --- ตั้ง Active Layer Collection เป็นตัวแรกที่ส่งมา (ถ้ามี) ---
+        # 6) Unhide/Select objects ที่รวบรวมได้อย่างปลอดภัย
+        active_candidate = None
+        for ob in shown:
+            try:
+                ob.hide_set(False)
+                ob.hide_viewport = False
+                ob.select_set(True if getattr(self, "select", False) else False)
+                # เก็บตัวแรกที่ "มองเห็นใน view layer นี้จริง" ไว้ตั้ง active
+                if active_candidate is None and ob.visible_get(view_layer=context.view_layer):
+                    active_candidate = ob
+            except Exception:
+                pass
+
+        # 7) ตั้ง Active Layer Collection ให้ตัวแรก (ถ้ามี)
         def find_layer_collection(lc, name):
             if lc.collection and lc.collection.name == name:
                 return lc
@@ -650,13 +642,17 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         first = target_names[0]
         alc = find_layer_collection(context.view_layer.layer_collection, first)
         if alc:
-            context.view_layer.active_layer_collection = alc
+            try:
+                context.view_layer.active_layer_collection = alc
+            except Exception:
+                pass
 
-        # (ออปชัน) เลือกออบเจ็กต์ที่ได้แสดง
-        if getattr(self, "select", False) and shown:
-            for ob in shown:
-                ob.select_set(True)
-            context.view_layer.objects.active = next(iter(shown))
+        # 8) ตั้ง active object เฉพาะกรณีที่เลือกไว้และมองเห็นได้
+        if getattr(self, "select", False) and active_candidate:
+            try:
+                context.view_layer.objects.active = active_candidate
+            except Exception:
+                pass
 
         return {'FINISHED'}
 
