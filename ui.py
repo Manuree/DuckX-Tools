@@ -223,7 +223,7 @@ class DuckXMenu(Menu):
             
             if context.mode == 'EDIT_MESH':
                 layout.operator("duckx_tools.orienselect", text="Orientation Select", icon="TRACKER")
-                layout.operator("duckx_tools.scale_zero", text="Scale 0", icon="DECORATE")
+                layout.operator("duckx_tools.scale_zero", text="A Scale 0", icon="DECORATE")
                 layout.operator("duckx_tools.orien_and_pivot", text="Edge Pivot Align", icon="SNAP_MIDPOINT")
                 layout.operator("duckx_tools.boundary_tools", text="Boundary Sharp", icon="MATPLANE")
                 layout.operator("duckx_tools.delete_loose_parts", text="Delete Loose Part", icon="PANEL_CLOSE")
