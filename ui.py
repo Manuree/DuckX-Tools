@@ -232,7 +232,7 @@ class DuckXMenu(Menu):
                 layout.operator("duckx_tools.move_vert_to_activer", text="Move Vx At Last", icon="ARROW_LEFTRIGHT")
                 layout.separator()
                 layout.label(text="Merge")
-                layout.operator("duckx_tools.couple_merge_vertex", text="Couple Merge Vertex", icon=bl_icons"AUTOMERGE_ON")
+                layout.operator("duckx_tools.couple_merge_vertex", text="Couple Merge Vertex", icon=bl_icons("AUTOMERGE_ON"))
                 try:
                     layout.operator("duckx_tools.merge_by_size", text="Face", icon="LIGHTPROBE_PLANAR").action = "face"
                 except:
