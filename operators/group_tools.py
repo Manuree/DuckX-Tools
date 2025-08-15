@@ -425,6 +425,8 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                     self.show_collections(context, cols)
                 else:
                     self.hide_collection(context, cols)
+            else:
+                func_core.move_to_collection(cols[0])
             
             print("------------------------------------------------------------------------")
             print(f"[Active Group: {group.name}] \nList:", cols)

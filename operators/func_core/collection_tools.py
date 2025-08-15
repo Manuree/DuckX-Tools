@@ -149,3 +149,20 @@ def collection_color_icon(coll: bpy.types.Collection) -> str:
         "COLOR_08": "COLLECTION_COLOR_08",
     }
     return mapping.get(tag, "OUTLINER_COLLECTION")
+
+def move_to_collection(collection):
+    if not collection:
+        print(f"Collection '{collection.name}' does not exist!")
+    else:
+        # วัตถุที่เลือกในปัจจุบัน
+        selected_objects = bpy.context.selected_objects
+
+        for obj in selected_objects:
+            # ลบวัตถุออกจากคอลเลคชันปัจจุบันทั้งหมด
+            for obj_collection in obj.users_collection:
+                obj_collection.objects.unlink(obj)
+
+            # ลิงก์วัตถุไปยังคอลเลคชันเป้าหมาย
+            collection.objects.link(obj)
+
+        print(f"Moved {len(selected_objects)} object(s) to collection '{collection.name}'.")
