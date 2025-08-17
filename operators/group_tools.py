@@ -10,6 +10,16 @@ import math
 
 edit_tab_name = False
 dummy_data = [["collection", ["A", "B", "C"]], ["object", ["D", "E", "F"]]]
+
+_cols = []
+
+def enum_cols_callback(self, context):
+    items = []
+    for i, col in enumerate(_cols):
+        items.append((col.name, col.name, "", i))
+    return items
+
+
   
 # ---------------------
 # Helpers
@@ -380,6 +390,10 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         else:
             return self.execute(context)
 
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Group Tools")
+
     def execute(self, context):
         scene = context.scene
         prop = scene.duckx_tools
@@ -426,7 +440,12 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                 else:
                     self.hide_collection(context, cols)
             else:
-                func_core.move_to_collection(cols[0])
+                if len(cols) > 1:
+                    global _cols
+                    _cols = cols
+                    bpy.ops.duckx_tools.group_tools_move_to_collections('INVOKE_DEFAULT')
+                else:
+                    func_core.move_to_collection(cols[0])
             
             print("------------------------------------------------------------------------")
             print(f"[Active Group: {group.name}] \nList:", cols)
@@ -565,15 +584,24 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         return {'FINISHED'}
     
     def show_collections(self, context, collections):
-        # 1) กลับสู่ OBJECT mode + เคลียร์ซ่อน/เลือก (เหมือนเดิม)
-        try: bpy.ops.object.mode_set(mode='OBJECT')
-        except Exception: pass
-        try: bpy.ops.object.hide_view_clear()
-        except Exception: pass
-        try: bpy.ops.object.select_all(action='DESELECT')
-        except Exception: pass
+        print(self.hide_others)
+        # กลับสู่ OBJECT mode กัน error
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except Exception:
+            pass
 
-        # 2) สร้างรายชื่อคอลเลกชันเป้าหมายเป็นชื่อ
+        # เคลียร์การซ่อนของวัตถุ และยกเลิกการเลือก (ตามพฤติกรรมเดิม)
+        try:
+            bpy.ops.object.hide_view_clear()
+        except Exception:
+            pass
+        try:
+            bpy.ops.object.select_all(action='DESELECT')
+        except Exception:
+            pass
+
+        # --- สร้างรายชื่อ "ชื่อคอลเลกชัน" เป้าหมาย ---
         target_names = []
         if collections:
             for c in collections:
@@ -583,55 +611,54 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         if not target_names:
             return {'FINISHED'}
 
-        # 3) รวม hierarchy เป็นชื่อคอลเลกชันที่ต้องคงไว้
+        # --- รวม hierarchy ของทุกคอลเลกชัน (เป็น "ชื่อ" ทั้งหมด) ---
         keep_names = set()
         for name in target_names:
             col = bpy.data.collections.get(name)
             if not col:
                 continue
-            for x in func_core.get_hierarchy_collections(col):
+            # NOTE: ฟังก์ชันนี้ของคุณควรส่ง "ชื่อ" กลับมา
+            # ถ้าส่งเป็น object ก็ map เป็นชื่อให้หมด
+            hlist = func_core.get_hierarchy_collections(col)
+            for x in hlist:
                 keep_names.add(x if isinstance(x, str) else getattr(x, "name", None))
             keep_names.add(name)
+
+        # ลบ None ที่อาจเล็ดรอด
         keep_names.discard(None)
+
         if not keep_names:
             return {'FINISHED'}
 
-        # 4) ซ่อน/โชว์คอลเลกชันตาม self.hide_others
+        # --- ซ่อน/แสดงคอลเลกชันตาม hide_others ---
         if getattr(self, "hide_others", False):
+            # ซ่อนทุกอันที่ "ไม่อยู่" ใน keep_names
             for coll in bpy.data.collections:
                 func_core.hide_collection(coll.name, hide_viewport=(coll.name not in keep_names))
         else:
+            # แค่ unhide เฉพาะที่ต้องคงไว้ ไม่ไปยุ่งตัวอื่น
             for name in keep_names:
                 func_core.hide_collection(name, hide_viewport=False)
 
-        # 5) เก็บอ็อบเจ็กต์จากคอลเลกชันเป้าหมายแบบ "รีเคอร์ซีฟ" (ไม่ใช้ all_objects)
-        def walk_collection(col, out):
-            for ob in col.objects:
-                out.add(ob)
-            for ch in col.children:
-                walk_collection(ch, out)
-
+        # --- Unhide objects ในคอลเลกชันเป้าหมาย (รวมลูก) ---
         shown = set()
         for name in target_names:
             col = bpy.data.collections.get(name)
             if not col:
                 continue
-            walk_collection(col, shown)
+            objs = getattr(col, "all_objects", None) or col.objects
+            for ob in objs:
+                if ob and ob not in shown:
+                    shown.add(ob)
+                    try:
+                        ob.hide_set(False)
+                        ob.select_set(True)
+                        bpy.context.view_layer.objects.active = ob
+                    except Exception:
+                        pass
+                    ob.hide_viewport = False
 
-        # 6) Unhide/Select objects ที่รวบรวมได้อย่างปลอดภัย
-        active_candidate = None
-        for ob in shown:
-            try:
-                ob.hide_set(False)
-                ob.hide_viewport = False
-                ob.select_set(True if getattr(self, "select", False) else False)
-                # เก็บตัวแรกที่ "มองเห็นใน view layer นี้จริง" ไว้ตั้ง active
-                if active_candidate is None and ob.visible_get(view_layer=context.view_layer):
-                    active_candidate = ob
-            except Exception:
-                pass
-
-        # 7) ตั้ง Active Layer Collection ให้ตัวแรก (ถ้ามี)
+        # --- ตั้ง Active Layer Collection เป็นตัวแรกที่ส่งมา (ถ้ามี) ---
         def find_layer_collection(lc, name):
             if lc.collection and lc.collection.name == name:
                 return lc
@@ -644,20 +671,48 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         first = target_names[0]
         alc = find_layer_collection(context.view_layer.layer_collection, first)
         if alc:
-            try:
-                context.view_layer.active_layer_collection = alc
-            except Exception:
-                pass
+            context.view_layer.active_layer_collection = alc
 
-        # 8) ตั้ง active object เฉพาะกรณีที่เลือกไว้และมองเห็นได้
-        if getattr(self, "select", False) and active_candidate:
-            try:
-                context.view_layer.objects.active = active_candidate
-            except Exception:
-                pass
+        # (ออปชัน) เลือกออบเจ็กต์ที่ได้แสดง
+        if getattr(self, "select", False) and shown:
+            for ob in shown:
+                ob.select_set(True)
+            context.view_layer.objects.active = next(iter(shown))
 
         return {'FINISHED'}
+    
 
+class Duckx_OT_GroupToolsMoveToCollections(Operator):
+    bl_idname = "duckx_tools.group_tools_move_to_collections"
+    bl_label = "Move to Collections"
+    bl_options = {"UNDO"}
+
+    col_target: EnumProperty(
+        name="Target Collection",
+        description="Choose collection to move object",
+        items=enum_cols_callback
+    )
+
+    def invoke(self, context, event):
+        if not _cols:
+            self.report({'WARNING'}, "No collections in _cols")
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        col.prop(self, "col_target", text="Collection", expand=True)
+
+    def execute(self, context):
+        target_col = bpy.data.collections.get(self.col_target)
+        print(self.col_target)
+        if not target_col:
+            self.report({'WARNING'}, "Collection not found")
+            return {'CANCELLED'}
+
+        func_core.move_to_collection(target_col)
+
+        return {'FINISHED'}
         
 class VIEW3D_PT_Duckx_Groups(Panel):
     bl_idname = "VIEW3D_PT_duckx_groups_panel"
@@ -722,6 +777,7 @@ def register():
     bpy.utils.register_class(Duckx_OT_GroupToolsAddGroup)
     bpy.utils.register_class(Duckx_OT_GroupToolsRemoveGroup)
     bpy.utils.register_class(Duckx_OT_GroupToolsActiveGroup)
+    bpy.utils.register_class(Duckx_OT_GroupToolsMoveToCollections)
 
     bpy.utils.register_class(VIEW3D_PT_Duckx_Groups)
 
@@ -735,6 +791,7 @@ def unregister():
     bpy.utils.unregister_class(Duckx_OT_GroupToolsAddGroup)
     bpy.utils.unregister_class(Duckx_OT_GroupToolsRemoveGroup)
     bpy.utils.unregister_class(Duckx_OT_GroupToolsActiveGroup)
-    
+    bpy.utils.unregister_class(Duckx_OT_GroupToolsMoveToCollections)
+
     bpy.utils.unregister_class(VIEW3D_PT_Duckx_Groups)
 
