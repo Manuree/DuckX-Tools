@@ -31,6 +31,12 @@ class Duckx_OT_FlipTools(Operator):
         ],
         default='X'
     )
+    
+    duplicate : BoolProperty(
+        name="Duplicate",
+        description="Duplicate the object before flipping",
+        default=False
+    )
 
     @classmethod
     def poll(cls, context):
@@ -39,8 +45,12 @@ class Duckx_OT_FlipTools(Operator):
     
     def invoke(self, context, event):
         if event.shift:
+            if event.ctrl:
+                self.duplicate = True
             self.action = "CURSOR"
         else:
+            if event.ctrl:
+                self.duplicate = True
             self.action = "GLOBAL"
         return self.execute(context)
 
@@ -48,6 +58,13 @@ class Duckx_OT_FlipTools(Operator):
         # Set transform pivot based on action
         objs = context.selected_objects
         original_pivot = context.scene.tool_settings.transform_pivot_point
+        
+        if self.duplicate:
+            # Duplicate selected objects
+            if context.mode == 'EDIT_MESH':
+                bpy.ops.mesh.duplicate_move()
+            elif context.mode == 'OBJECT':
+                bpy.ops.object.duplicate_move()
         
         if self.action == 'GLOBAL':
             # Set 3D Cursor
@@ -102,6 +119,8 @@ class Duckx_OT_FlipTools(Operator):
         row = layout.row(align=True)
         row.scale_y = 1.5
         row.prop(self, "action", expand=True)
+        row = layout.row(align=True)
+        row.prop(self, "duplicate", expand=True)
         row = layout.row(align=True)
         row.prop(self, "axis", expand=True)
     
