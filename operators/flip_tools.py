@@ -108,8 +108,8 @@ class Duckx_OT_FlipTools(Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.flip_normals()
             bpy.ops.object.mode_set(mode='OBJECT')
-        
-        
+
+        func_core.flip_uv(True)
         self.report({'INFO'}, f"Flipped around {self.action.title()} on {self.axis} axis")
         
         return {'FINISHED'}
