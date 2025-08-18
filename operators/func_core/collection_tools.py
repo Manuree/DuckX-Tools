@@ -58,13 +58,12 @@ def collections_from_selected_objects(context):
 
     return found
 
-def hide_collection(collection_name:str, hide_viewport:bool = True):
-    # ค้นหา LayerCollection ใน View Layer ปัจจุบัน
+def hide_collection(collection_name: str, hide_viewport: bool = True):
     layer_collections = bpy.context.view_layer.layer_collection
 
-    # ฟังก์ชันค้นหา LayerCollection ตามชื่อ
     def find_layer_collection(layer_collection, name):
-        if layer_collection.name == name:
+        # เดิม: if layer_collection.name == name:
+        if getattr(layer_collection, "collection", None) and layer_collection.collection.name == name:
             return layer_collection
         for child in layer_collection.children:
             found = find_layer_collection(child, name)
@@ -72,13 +71,9 @@ def hide_collection(collection_name:str, hide_viewport:bool = True):
                 return found
         return None
 
-    # ค้นหาคอลเลคชันที่ต้องการ
     target_layer_collection = find_layer_collection(layer_collections, collection_name)
-
     if target_layer_collection:
-        # พับคอลเลคชัน
         target_layer_collection.hide_viewport = hide_viewport
-        print(f"Collapsed collection '{collection_name}'")
     else:
         print(f"Collection '{collection_name}' not found")
 
