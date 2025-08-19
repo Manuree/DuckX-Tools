@@ -80,9 +80,12 @@ class Duckx_OT_UVMapManager(Operator):
                             break
         
         elif action[0] == "uvnew":
+            if len(active_object.data.uv_layers) == 8:
+                self.report({'WARNING'}, "Cannot add more than 8 UV maps")
+                return {'CANCELLED'}  # ไม่สามารถสร้าง UV Map ใหม่ได้ถ้ามีมากกว่า 8
             for obj in objs:
                 if obj.type == "MESH":
-                    new_uv_layer = obj.data.uv_layers.new(name=f"UVMap_{len(obj.data.uv_layers)}")
+                    new_uv_layer = obj.data.uv_layers.new(name=f"UV{len(obj.data.uv_layers)+1}")
                     obj.data.uv_layers.active = new_uv_layer
                     print(f"New UV Map created: {new_uv_layer.name}")
         
@@ -284,15 +287,18 @@ def draw_uv_map_manager(self, context, layout, properties):
         box = layout.box()
         row = box.row(align=True)
         uv_active = False
-        for i, uv_layer in enumerate(active_object.data.uv_layers):
-            if active_object.data.uv_layers.active == uv_layer:
-                uv_active = True
-            else:
-                uv_active = False
-            if len(active_object.data.uv_layers) < 5:
-                row.operator("duckx_tools.uv_map_manager", text=uv_layer.name, depress=uv_active).action = f"uvactive:>{i}:>{uv_layer.name}"
-            else:
-                row.operator("duckx_tools.uv_map_manager", text=str(i+1), depress=uv_active).action = f"uvactive:>{i}:>{uv_layer.name}"
+        if active_object.data.uv_layers:
+            for i, uv_layer in enumerate(active_object.data.uv_layers):
+                if active_object.data.uv_layers.active == uv_layer:
+                    uv_active = True
+                else:
+                    uv_active = False
+                if len(active_object.data.uv_layers) < 5:
+                    row.operator("duckx_tools.uv_map_manager", text=uv_layer.name, depress=uv_active).action = f"uvactive:>{i}:>{uv_layer.name}"
+                else:
+                    row.operator("duckx_tools.uv_map_manager", text=str(i+1), depress=uv_active).action = f"uvactive:>{i}:>{uv_layer.name}"
+        else:
+            row.operator("duckx_tools.uv_map_manager", text="New UV", depress=uv_active).action = f"uvnew:>0:>UV1"
 
 def draw_invert_seam(self, context, layout, properties):
     layout.operator("duckx_tools.invert_seam")
