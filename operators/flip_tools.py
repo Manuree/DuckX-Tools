@@ -132,12 +132,12 @@ class Duckx_OT_FlipTools(Operator):
         row.scale_y = 1.5
         row.prop(self, "action", expand=True)
         row = layout.row(align=True)
+        row.prop(self, "axis", expand=True)
+        row = layout.row(align=True)
         row.prop(self, "duplicate", expand=True)
         row = layout.row(align=True)
         row.prop(self, "uv_flip_x", expand=True)
         row.prop(self, "uv_flip_y", expand=False)
-        row = layout.row(align=True)
-        row.prop(self, "axis", expand=True)
     
 
 def draw_flip_tools(self, context, layout, props):
