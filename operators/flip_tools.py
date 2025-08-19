@@ -37,6 +37,15 @@ class Duckx_OT_FlipTools(Operator):
         description="Duplicate the object before flipping",
         default=False
     )
+    
+    uv_flip_x : BoolProperty(
+        name="Flip UVs X",
+        description="Flip UVs along the X axis",
+        default=True)
+    uv_flip_y : BoolProperty(
+        name="Flip UVs Y",
+        description="Flip UVs along the Y axis",
+        default=False)
 
     @classmethod
     def poll(cls, context):
@@ -108,8 +117,11 @@ class Duckx_OT_FlipTools(Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.flip_normals()
             bpy.ops.object.mode_set(mode='OBJECT')
-
-        func_core.flip_uv(True)
+        
+        if self.uv_flip_x:
+            func_core.flip_uv(True)
+        if self.uv_flip_y:
+            func_core.flip_uv(False)
         self.report({'INFO'}, f"Flipped around {self.action.title()} on {self.axis} axis")
         
         return {'FINISHED'}
@@ -121,6 +133,9 @@ class Duckx_OT_FlipTools(Operator):
         row.prop(self, "action", expand=True)
         row = layout.row(align=True)
         row.prop(self, "duplicate", expand=True)
+        row = layout.row(align=True)
+        row.prop(self, "uv_flip_x", expand=True)
+        row.prop(self, "uv_flip_y", expand=False)
         row = layout.row(align=True)
         row.prop(self, "axis", expand=True)
     
