@@ -124,21 +124,6 @@ def distance_calculator() -> float:
 
     # ส่งค่าเข้า func_core.clipboard() (พยายาม import ทั้งแบบ relative และ absolute)
     clipboard_text = f"{dist_u:.6f} {unit_short(unit)}"
-    func_core = None
-    try:
-        from . import func_core as _fc  # ภายในแพ็กเกจเสริม
-        func_core = _fc
-    except Exception:
-        try:
-            import func_core as _fc  # เป็นโมดูลอิสระ
-            func_core = _fc
-        except Exception:
-            func_core = None
-
-    if func_core:
-        try:
-            func_core.clipboard(clipboard_text)
-        except Exception:
-            pass
+    utils_tools.clipboard(dist_u)
 
     return float(dist_u)
