@@ -36,16 +36,22 @@ class Duckx_OT_UVMapManager(Operator):
     def invoke(self, context, event):
         action = self.action.split(':>')
         objs = context.selected_objects
+        active_object = context.active_object
         if event.shift:
             self.action = f"uvrename:>{action[1]}:>{action[2]}"
             # เก็บชื่อเดิมไว้
-            target_index = int(action[1])
-            self.old_name = context.active_object.data.uv_layers[target_index].name
-            for obj in objs:
-                if obj.type == "MESH":
-                    obj.data.uv_layers.active_index = target_index
-            wm = context.window_manager
-            return wm.invoke_props_dialog(self)
+            if active_object.data.uv_layers:
+                
+                target_index = int(action[1])
+                self.old_name = context.active_object.data.uv_layers[target_index].name
+                for obj in objs:
+                    if obj.type == "MESH":
+                        obj.data.uv_layers.active_index = target_index
+                wm = context.window_manager
+                return wm.invoke_props_dialog(self)
+            else:
+                self.report({'WARNING'}, "UV Is not available")
+                return {'CANCELLED'}
         elif event.alt:
             bpy.ops.duckx_tools.delete_uvmap('INVOKE_DEFAULT', action=self.action)
             return self.execute(context)
