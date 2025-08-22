@@ -194,6 +194,7 @@ class Duckx_OT_GroupToolsActiveTab(Operator):
     bl_idname = "duckx_tools.group_tools_active_tab"
     bl_label = "Active Tab"
     bl_options = {"REGISTER"}  # เปลี่ยนชื่อ/สลับแท็บ ไม่จำเป็นต้อง UNDO
+    bl_description = "[SHIFT CLICK] for Renname this tab"
 
     tab_index: bpy.props.IntProperty()
     # ใช้เฉพาะตอน rename
