@@ -61,6 +61,11 @@ class Duckx_Properties(PropertyGroup):
                  ]
     )# type: ignore
 
+    # Draw Overlay
+    overlay_correct_face_att : BoolProperty(name="Correct Face Attributes", default=True)# type: ignore
+    overlay_uv_rotation : BoolProperty(name="UV Rotation", default=True)# type: ignore
+    overlay_boundary_tools : BoolProperty(name="Boundary Tools", default=True)# type: ignore
+
     # Object Info
     uvmaps : BoolProperty(name="UV Maps", default=True)# type: ignore
     custom_props : BoolProperty(name="Custom Properties", default=False)# type: ignore
@@ -134,9 +139,17 @@ def draw_setting(self, context, layout, props):
     row.prop(props, "decals_panel")
     return layout
 
+def draw_setting_overlay(self, context, layout, props):
+    col = layout.column(align=True)
+    col.prop(props, "overlay_correct_face_att")
+    col.prop(props, "overlay_uv_rotation")
+    col.prop(props, "overlay_boundary_tools")
+    return layout
+
 
 
 add_expand_panel("Panel Setting", draw_setting, "SETTING")
+add_expand_panel("Overlay", draw_setting_overlay, "SETTING")
 
 
 

@@ -133,9 +133,13 @@ class VIEW3D_PT_Duckx_MainPanel(Panel):
         # Correct Face Attributes
         row = layout.row(align=True)
         row.scale_y = 1.5
-        row.prop(context.scene.tool_settings, "use_transform_correct_face_attributes", text="Correct Face Attributes", icon="UV")
-        if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
-            row.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINKED")
+        if bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
+            row.operator("duckx_tools.correct_face_attributes", text="Correct Face", icon="UV", depress=True)
+            if  bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
+                row.prop(context.scene.tool_settings, "use_transform_correct_keep_connected", text="", icon="LINKED")
+        else:
+            row.operator("duckx_tools.correct_face_attributes", text="Correct Face", icon="UV", depress=False)
+            
 
         # Create a row for the tabs
         row = layout.row(align=True) # Create a row with alignment
@@ -228,6 +232,7 @@ class DuckXMenu(Menu):
                 layout.operator("duckx_tools.orien_and_pivot", text="Edge Pivot Align", icon="SNAP_MIDPOINT")
                 layout.operator("duckx_tools.boundary_tools", text="Boundary Sharp", icon="MATPLANE")
                 layout.operator("duckx_tools.delete_loose_parts", text="Delete Loose Part", icon="PANEL_CLOSE")
+                layout.operator("duckx_tools.uv_rotation", text="Rotate UV", icon="FILE_REFRESH").start_modal = True
                 layout.operator_menu_enum("duckx_tools.remove_loop_ring", property="action", text="Remove Ring Loop", icon="PANEL_CLOSE")
                 layout.operator("duckx_tools.move_vert_to_activer", text="Move Vx At Last", icon="ARROW_LEFTRIGHT")
                 layout.separator()

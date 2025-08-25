@@ -184,6 +184,7 @@ class Duckx_OT_UVRotation(Operator):
     bl_options = {"REGISTER", "UNDO"}
     bl_description = "[SHIFT CLICK] for rotate only selected"
 
+    start_modal: bpy.props.BoolProperty(default=False)
     angle : FloatProperty(name="Angle")
     islands = True
 
@@ -194,11 +195,78 @@ class Duckx_OT_UVRotation(Operator):
                 context.mode == 'EDIT_MESH')    
 
     def invoke(self, context, event):
-        if event.shift:
+        if self.start_modal:
+            context.window_manager.modal_handler_add(self)
+            func_core.draw_handler_stop()
+            if bpy.context.scene.duckx_tools.overlay_uv_rotation:
+                func_core.draw_handler_start((0.039, 1.0, 0.835, 1), thickness=2, margin=58)
+            return {'RUNNING_MODAL'}
+        elif event.shift:
             self.islands = False
             return self.execute(context)
         else:
             return self.execute(context)
+        
+    def modal(self, context, event):
+        # อนุญาตให้หมุนได้หลายครั้งระหว่าง modal
+        # และให้ปุ่มเมาส์/ล้อเมาส์ยังทำงานปกติในวิว 3D
+        context.area.header_text_set("Boundary Tools - Press [Q]: Rotate Left, [E]: Rotate Right")
+         # === ออกจาก modal เมื่อคลิก "ที่ว่าง" ใน 3D View ===
+        # รองรับทั้งผู้ใช้ที่ตั้งค่า Select Mouse = LEFT/RIGHT
+        if event.value == 'PRESS':
+            try:
+                select_mouse = context.preferences.inputs.select_mouse  # 'LEFT' หรือ 'RIGHT'
+            except Exception:
+                select_mouse = 'LEFT'
+            is_select_click = (
+                (select_mouse == 'LEFT'  and event.type == 'LEFTMOUSE') or
+                (select_mouse == 'RIGHT' and event.type == 'RIGHTMOUSE')
+            )
+
+            if is_select_click and context.area.type == 'VIEW_3D' and context.region.type == 'WINDOW':
+                # ray cast ใต้ตำแหน่งเมาส์ เพื่อตรวจว่าคลิกโดนอะไรหรือไม่
+                try:
+                    from bpy_extras import view3d_utils
+                    region = context.region
+                    rv3d   = context.region_data
+                    if rv3d is not None:
+                        coord = (event.mouse_region_x, event.mouse_region_y)
+                        view_vec   = view3d_utils.region_2d_to_vector_3d(region, rv3d, coord)
+                        ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
+                        depsgraph  = context.evaluated_depsgraph_get()
+
+                        hit, *_rest = context.scene.ray_cast(depsgraph, ray_origin, view_vec)
+                        if not hit:
+                            # คลิก “ที่ว่าง” → จบ modal
+                            context.area.header_text_set(None)
+                            func_core.draw_handler_stop()
+                            return {'FINISHED'}
+                        # ถ้าคลิกโดนอะไร ให้ปล่อยผ่านไปเลือกวัตถุตามปกติ
+                        return {'PASS_THROUGH'}
+                except Exception:
+                    # ถ้า ray cast มีปัญหา ใช้ fallback: ออกจาก modal เมื่อคลิก select mouse
+                    context.area.header_text_set(None)
+                    func_core.draw_handler_stop()
+                    return {'FINISHED'}
+
+        # … (โค้ด Q/E เดิมของคุณ)
+        if event.value in {'PRESS', 'REPEAT'}:
+            if event.type == 'Q':
+                self.islands = not event.shift
+                self.angle = 90.0
+                self.execute(context)
+                context.area.tag_redraw()
+                return {'RUNNING_MODAL'}
+
+            if event.type == 'E':
+                self.islands = not event.shift
+                self.angle = -90.0
+                self.execute(context)
+                context.area.tag_redraw()
+                return {'RUNNING_MODAL'}
+
+        # คีย์/อีเวนต์อื่น ๆ
+        return {'PASS_THROUGH'}
                 
     def execute(self, context):
         if not context.area.type == 'IMAGE_EDITOR':
@@ -267,6 +335,8 @@ class Duckx_OT_UVPositionRandom(Operator):
             return self.execute(context)
         else:
             return self.execute(context)
+        
+    
     
     def execute(self, context):
         x, y = func_core.get_active_uv_island_position()
@@ -315,13 +385,18 @@ def draw_uv_rotation(self, context, layout, properties):
     row.label(text="UV Rotation")
     row.prop(properties, "uv_angle", text="")
     row.operator("duckx_tools.uv_rotation", text="", icon="FILE_REFRESH").angle = properties.uv_angle
-    row = box.row()
+    row = box.row(align=True)
     row.operator("duckx_tools.uv_rotation", text="-90°").angle = -90
     row.operator("duckx_tools.uv_rotation", text="+90°").angle = 90
+    row.separator()
     row.operator("duckx_tools.uv_rotation", text="-45°").angle = -45
     row.operator("duckx_tools.uv_rotation", text="+45°").angle = 45
     row = box.row()
-    row.operator("duckx_tools.uv_rotation", text="180°").angle = 180
+    col = box.column(align=True)
+    col.operator("duckx_tools.uv_rotation", text="180°").angle = 180
+    row = col.row(align=True)
+    row.scale_y = 1.5
+    row.operator("duckx_tools.uv_rotation", text="Rotate UV", icon="FILE_REFRESH").start_modal = True
 
 add_panel("UV_Map_Manager", draw_uv_map_manager)
 add_panel("Invert Seam", draw_invert_seam)

@@ -213,10 +213,13 @@ class Duckx_OT_BoundaryTools(Operator):
     def modal(self, context, event):
         # แสดงข้อความใน header
         context.area.header_text_set("Boundary Tools - Press [1]: Select, [2]: Mark Sharp, [3]: Clear Sharp, ESC: Cancel")
-        
+        if bpy.context.scene.duckx_tools.overlay_boundary_tools:
+            func_core.draw_handler_start((0, 1, 1, 1), thickness=2, margin=58)
+
         if event.type in {'LEFTMOUSE', 'RIGHTMOUSE', 'ESC'}:
             # ยกเลิกการทำงาน
             context.area.header_text_set(None)
+            func_core.draw_handler_stop()
             return {'CANCELLED'}
         
         elif event.type == 'ONE' and event.value == 'PRESS':
@@ -224,6 +227,7 @@ class Duckx_OT_BoundaryTools(Operator):
             self.action = 'SELECT'
             self.execute_action(context)
             context.area.header_text_set(None)
+            func_core.draw_handler_stop()
             return {'FINISHED'}
             
         elif event.type == 'TWO' and event.value == 'PRESS':
@@ -231,6 +235,7 @@ class Duckx_OT_BoundaryTools(Operator):
             self.action = 'MARK_SHARP'
             self.execute_action(context)
             context.area.header_text_set(None)
+            func_core.draw_handler_stop()
             return {'FINISHED'}
             
         elif event.type == 'THREE' and event.value == 'PRESS':
@@ -238,6 +243,7 @@ class Duckx_OT_BoundaryTools(Operator):
             self.action = 'CLEAR_SHARP'
             self.execute_action(context)
             context.area.header_text_set(None)
+            func_core.draw_handler_stop()
             return {'FINISHED'}
         
         # ส่งต่อ event อื่นๆ
@@ -262,14 +268,18 @@ class Duckx_OT_BoundaryTools(Operator):
                 self.report({'WARNING'}, "Must be in Edit Mode")
         else:
             self.report({'WARNING'}, "No mesh object selected")
+        func_core.draw_handler_stop()
 
     def invoke(self, context, event):
         # เริ่ม modal mode
+        func_core.draw_handler_clear_all()
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
         # ถ้าเรียกจาก UI หรือ command line
+        func_core.draw_handler_stop()
+        func_core.draw_handler_clear_all()
         self.execute_action(context)
         return {'FINISHED'}
 
@@ -447,12 +457,17 @@ class Duckx_OT_RemoveLoopRing(Operator):
 class Duckx_OT_CorrectFace(Operator):
     bl_idname = "duckx_tools.correct_face_attributes"
     bl_label = "Correct face attributes"
+    bl_description = "Correct face attributes"
 
     def execute(self, context):
+        func_core.draw_handler_clear_all()
         if bpy.context.scene.tool_settings.use_transform_correct_face_attributes == True:
             bpy.context.scene.tool_settings.use_transform_correct_face_attributes = False
+            func_core.draw_handler_stop()
         else:
             bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
+            if bpy.context.scene.duckx_tools.overlay_correct_face_att:
+                func_core.draw_handler_start((203/255, 111/255, 255/255, 1), thickness=2, margin=58)
         return {'FINISHED'}
     
 class Duckx_OT_DeleteLooseParts(Operator):
