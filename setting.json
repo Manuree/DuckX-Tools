@@ -1,3 +1,6 @@
 {
-    "Keymap Assign": true
+    "Keymap Assign": true,
+    "overlay_correct_face_att": true,
+    "overlay_uv_rotation": true,
+    "overlay_boundary_tools": true
 }
