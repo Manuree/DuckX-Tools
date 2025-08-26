@@ -3,6 +3,7 @@ import bmesh
 from bpy.types import (Operator)
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
+from .. import preferences as prefs
 from ..icon_reg import *
 from . import func_core
 from ..ui import add_panel, add_expand_panel
@@ -213,8 +214,11 @@ class Duckx_OT_BoundaryTools(Operator):
     def modal(self, context, event):
         # แสดงข้อความใน header
         context.area.header_text_set("Boundary Tools - Press [1]: Select, [2]: Mark Sharp, [3]: Clear Sharp, ESC: Cancel")
-        if bpy.context.scene.duckx_tools.overlay_boundary_tools:
-            func_core.draw_handler_start((0, 1, 1, 1), thickness=2, margin=58)
+        pr = prefs.get_prefs()
+        if pr and pr.overlay_uv_rotation:
+            use_custom = bool(pr and getattr(pr, "overlay_custom_color", False))
+            color = tuple(pr.overlay_frame_color) if use_custom else (0, 1, 1, 1)
+            func_core.draw_handler_start(color=color, thickness=pr.overlay_frame_thickness, margin=pr.overlay_frame_margin)
 
         if event.type in {'LEFTMOUSE', 'RIGHTMOUSE', 'ESC'}:
             # ยกเลิกการทำงาน
@@ -466,8 +470,12 @@ class Duckx_OT_CorrectFace(Operator):
             func_core.draw_handler_stop()
         else:
             bpy.context.scene.tool_settings.use_transform_correct_face_attributes = True
-            if bpy.context.scene.duckx_tools.overlay_correct_face_att:
-                func_core.draw_handler_start((203/255, 111/255, 255/255, 1), thickness=2, margin=58)
+            pr = prefs.get_prefs()
+            if pr and pr.overlay_uv_rotation:
+                use_custom = bool(pr and getattr(pr, "overlay_custom_color", False))
+                color = tuple(pr.overlay_frame_color) if use_custom else (203/255, 111/255, 255/255, 1)
+                func_core.draw_handler_start(color=color, thickness=pr.overlay_frame_thickness, margin=pr.overlay_frame_margin)
+
         return {'FINISHED'}
     
 class Duckx_OT_DeleteLooseParts(Operator):

@@ -49,26 +49,6 @@ class Duckx_Tab(PropertyGroup):
     groups: bpy.props.CollectionProperty(type=Duckx_Group)# type: ignore
     group_index: bpy.props.IntProperty(default=-1)# type: ignore
 
-_ADDON_READY = False
-def update_overlays_settings(self, context):
-    # กันช่วงยังไม่พร้อม / ยังไม่ผูก pointer
-    if not _ADDON_READY or context is None or not hasattr(context.scene, "duckx_tools"):
-        return
-
-    try:
-        settings = func_core.read_json("setting.json") or {}
-    except Exception:
-        settings = {}
-
-    settings["overlay_correct_face_att"] = bool(self.overlay_correct_face_att)
-    settings["overlay_uv_rotation"]      = bool(self.overlay_uv_rotation)
-    settings["overlay_boundary_tools"]   = bool(self.overlay_boundary_tools)
-
-    try:
-        func_core.write_json("setting.json", settings)
-    except Exception as e:
-        print(f"[Duckx] write settings failed: {e}")
-
 class Duckx_Properties(PropertyGroup):
     tabs_menu : EnumProperty(
         name = "Tabs",
@@ -82,10 +62,6 @@ class Duckx_Properties(PropertyGroup):
                  ]
     )# type: ignore
 
-    # Draw Overlay
-    overlay_correct_face_att : BoolProperty(name="Correct Face Attributes", default=True, update=update_overlays_settings)# type: ignore
-    overlay_uv_rotation : BoolProperty(name="UV Rotation", default=True, update=update_overlays_settings)# type: ignore
-    overlay_boundary_tools : BoolProperty(name="Boundary Tools", default=True, update=update_overlays_settings)# type: ignore
 
     # Object Info
     uvmaps : BoolProperty(name="UV Maps", default=True)# type: ignore
@@ -161,10 +137,11 @@ def draw_setting(self, context, layout, props):
     return layout
 
 def draw_setting_overlay(self, context, layout, props):
+    pr = bpy.context.preferences.addons[__package__].preferences
     col = layout.column(align=True)
-    col.prop(props, "overlay_correct_face_att")
-    col.prop(props, "overlay_uv_rotation")
-    col.prop(props, "overlay_boundary_tools")
+    col.prop(pr, "overlay_correct_face_att")
+    col.prop(pr, "overlay_uv_rotation")
+    col.prop(pr, "overlay_boundary_tools")
     return layout
 
 
@@ -182,14 +159,10 @@ def register():
         bpy.utils.register_class(cls)
 
     bpy.types.Scene.duckx_tools = PointerProperty(type= Duckx_Properties)
-    global _ADDON_READY
-    _ADDON_READY = True 
 
 def unregister():
 
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
-    global _ADDON_READY
-    _ADDON_READY = False
     del Scene.duckx_tools

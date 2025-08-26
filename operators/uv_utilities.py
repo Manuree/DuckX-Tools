@@ -3,6 +3,7 @@ import bmesh
 from bpy.types import (Context, Event, Operator)
 from bpy.props import (EnumProperty, PointerProperty, StringProperty, FloatVectorProperty, FloatProperty, IntProperty, BoolProperty)
 
+from .. import preferences as prefs
 from . import func_core
 import math
 import random
@@ -198,8 +199,12 @@ class Duckx_OT_UVRotation(Operator):
         if self.start_modal:
             context.window_manager.modal_handler_add(self)
             func_core.draw_handler_stop()
-            if bpy.context.scene.duckx_tools.overlay_uv_rotation:
-                func_core.draw_handler_start((0.039, 1.0, 0.835, 1), thickness=2, margin=58)
+            
+            pr = prefs.get_prefs()
+            if pr and pr.overlay_uv_rotation:
+                use_custom = bool(pr and getattr(pr, "overlay_custom_color", False))
+                color = tuple(pr.overlay_frame_color) if use_custom else (0.039, 1.0, 0.835, 1)
+                func_core.draw_handler_start(color=color, thickness=pr.overlay_frame_thickness, margin=pr.overlay_frame_margin)
             return {'RUNNING_MODAL'}
         elif event.shift:
             self.islands = False
