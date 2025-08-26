@@ -240,13 +240,23 @@ class Duckx_OT_UVRotation(Operator):
                         ray_origin = view3d_utils.region_2d_to_origin_3d(region, rv3d, coord)
                         depsgraph  = context.evaluated_depsgraph_get()
 
-                        hit, *_rest = context.scene.ray_cast(depsgraph, ray_origin, view_vec)
+                        # รับค่า obj จาก ray_cast ด้วย
+                        hit, loc, nor, face_index, obj, _ = context.scene.ray_cast(depsgraph, ray_origin, view_vec)
+
                         if not hit:
                             # คลิก “ที่ว่าง” → จบ modal
                             context.area.header_text_set(None)
                             func_core.draw_handler_stop()
                             return {'FINISHED'}
-                        # ถ้าคลิกโดนอะไร ให้ปล่อยผ่านไปเลือกวัตถุตามปกติ
+
+                        # ▶ เพิ่ม logic: ถ้าโดน 'วัตถุที่ยังไม่ได้ถูกเลือกอยู่' → จบ modal
+                        #   (ใช้ obj.select_get() เพื่อตรวจสถานะการเลือกใน Object Mode)
+                        if obj is None or not obj.select_get():
+                            context.area.header_text_set(None)
+                            func_core.draw_handler_stop()
+                            return {'FINISHED'}
+
+                        # ถ้าโดนวัตถุที่เลือกอยู่แล้ว → ปล่อยให้ Blender จัดการ selection ต่อไป
                         return {'PASS_THROUGH'}
                 except Exception:
                     # ถ้า ray cast มีปัญหา ใช้ fallback: ออกจาก modal เมื่อคลิก select mouse
@@ -391,14 +401,24 @@ def draw_uv_rotation(self, context, layout, properties):
     row.prop(properties, "uv_angle", text="")
     row.operator("duckx_tools.uv_rotation", text="", icon="FILE_REFRESH").angle = properties.uv_angle
     row = box.row(align=True)
-    row.operator("duckx_tools.uv_rotation", text="-90°").angle = -90
-    row.operator("duckx_tools.uv_rotation", text="+90°").angle = 90
+    bt = row.operator("duckx_tools.uv_rotation", text="-90°")
+    bt.start_modal = False
+    bt.angle = -90
+    bt = row.operator("duckx_tools.uv_rotation", text="+90°")
+    bt.start_modal = False
+    bt.angle = 90
     row.separator()
-    row.operator("duckx_tools.uv_rotation", text="-45°").angle = -45
-    row.operator("duckx_tools.uv_rotation", text="+45°").angle = 45
+    bt = row.operator("duckx_tools.uv_rotation", text="-45°")
+    bt.start_modal = False
+    bt.angle = -45
+    bt = row.operator("duckx_tools.uv_rotation", text="+45°")
+    bt.start_modal = False
+    bt.angle = 45
     row = box.row()
     col = box.column(align=True)
-    col.operator("duckx_tools.uv_rotation", text="180°").angle = 180
+    bt = col.operator("duckx_tools.uv_rotation", text="180°")
+    bt.start_modal = False
+    bt.angle = 180
     row = col.row(align=True)
     row.scale_y = 1.5
     row.operator("duckx_tools.uv_rotation", text="Rotate UV", icon="FILE_REFRESH").start_modal = True

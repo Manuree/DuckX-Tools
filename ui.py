@@ -255,8 +255,12 @@ class DuckXMenu(Menu):
             #layout.operator("duckx_tools.uvpadding", text="+ " + "Padding", icon="MOD_EXPLODE").action = "more"
             #layout.operator("duckx_tools.uvpadding", text="- " + "Padding", icon="MOD_EXPLODE").action = "less"
             #layout.operator("duckx_tools.uv_unwarp_here", text="Unwarp Here", icon="UV")
-            layout.operator("duckx_tools.uv_rotation", text="Q -90°").angle = -90
-            layout.operator("duckx_tools.uv_rotation", text="E +90°").angle = 90
+            bt = layout.operator("duckx_tools.uv_rotation", text="Q -90°")
+            bt.start_modal = False
+            bt.angle = -90
+            bt = layout.operator("duckx_tools.uv_rotation", text="E +90°")
+            bt.start_modal = False
+            bt.angle = 90
                 
         #Console
         layout.separator()
