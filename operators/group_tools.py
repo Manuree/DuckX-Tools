@@ -359,7 +359,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
     bl_idname = "duckx_tools.group_tools_active_group"
     bl_label = "Active Group"
     bl_options = {"UNDO"}
-    bl_description = "Show and Hide group objects \n[SHIFT CLICK] for ignore hide current \n[CTRL] for select all in collection \n[ALT] for hide all in collection \n[CTRL + ALT] for move selected objects to this collection"
+    bl_description = "Show and Hide group objects \n[SHIFT CLICK] for ignore hide current \n[SHIFT + ALT] for show others and hide this group \n[CTRL] for select all in collection \n[ALT] for hide all in collection \n[CTRL + ALT] for move selected objects to this collection"
 
     group_index: bpy.props.IntProperty(default=-1)
 
