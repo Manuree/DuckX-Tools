@@ -477,7 +477,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                 ob.hide_set(True)  # ซ่อนใน Viewport
             except Exception:
                 pass
-            ob.hide_viewport = True  # กันพลาดถ้า hide_set ไม่รองรับ
+            #ob.hide_viewport = True  # กันพลาดถ้า hide_set ไม่รองรับ
 
         return {'FINISHED'}
         
@@ -510,7 +510,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         for name in col_names:
             lc = find_layer_collection(context.view_layer.layer_collection, name)
             if lc:
-                lc.hide_viewport = True
+                lc.hide_set = True
 
         return {'FINISHED'}
     
@@ -561,7 +561,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                 ob.hide_set(False)
             except Exception:
                 pass
-            ob.hide_viewport = False
+            #ob.hide_viewport = False
 
         # ถ้าให้ซ่อนตัวอื่นด้วย ให้ซ่อนทุกตัวที่ไม่ใช่เป้าหมาย
         if getattr(self, "hide_others", False):
@@ -571,7 +571,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                         ob.hide_set(True)
                     except Exception:
                         pass
-                    ob.hide_viewport = True
+                    #ob.hide_viewport = True
 
         # เลือกและตั้ง active ให้เป้าหมายตัวแรก (ถ้าต้องการ)
         try:
@@ -666,7 +666,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         # 6) unhide อ็อบเจ็กต์เป้าหมาย
         for ob in to_show:
             ob.hide_set(False)
-            ob.hide_viewport = False
+            #ob.hide_viewport = False
 
         # 7) ตั้ง selection และ active object หลัง visibility stable แล้ว
         try:
