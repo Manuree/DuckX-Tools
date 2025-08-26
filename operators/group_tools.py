@@ -358,13 +358,14 @@ class Duckx_OT_GroupToolsRemoveGroup(Operator):
 class Duckx_OT_GroupToolsActiveGroup(Operator):
     bl_idname = "duckx_tools.group_tools_active_group"
     bl_label = "Active Group"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"UNDO"}
     bl_description = "Show and Hide group objects \n[SHIFT CLICK] for ignore hide current \n[CTRL] for select all in collection \n[ALT] for hide all in collection \n[CTRL + ALT] for move selected objects to this collection"
 
     group_index: bpy.props.IntProperty(default=-1)
 
     hide_others = True
     invert = False
+    hide_invert = False
     select = False
     move = False
 
@@ -374,7 +375,10 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                 and hasattr(context.scene.duckx_tools, "tabs"))
     
     def invoke(self, context, event):
-        if event.shift:
+        if event.shift and event.alt:
+            self.hide_invert = True
+            return self.execute(context)
+        elif event.shift:
             if event.ctrl:
                 self.select = True
             self.hide_others = False
@@ -419,11 +423,14 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                 if it.obj:
                     objs.append(it.obj.name)
 
-            # Show Objects
-            if self.invert == False:
-                self.show_objects(context, objs)
+            if self.hide_invert:
+                self.show_others_objects(context, objs)
             else:
-                self.hide_objects(context, objs)
+                # Show Objects
+                if self.invert == False:
+                    self.show_objects(context, objs)
+                else:
+                    self.hide_objects(context, objs)
 
             print("------------------------------------------------------------------------")
             print(f"[Active Group: {group.name}] \nList:", objs)
@@ -434,19 +441,23 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
                 if it.col:
                     cols.append(it.col)
 
-            # Show Collection
-            if self.move == False:
-                if self.invert == False:
-                    self.show_collections(context, cols)
-                else:
-                    self.hide_collection(context, cols)
+
+            if self.hide_invert:
+                self.show_others_collections(context, cols)
             else:
-                if len(cols) > 1:
-                    global _cols
-                    _cols = cols
-                    bpy.ops.duckx_tools.group_tools_move_to_collections('INVOKE_DEFAULT')
+                # Show Collection
+                if self.move == False:
+                    if self.invert == False:
+                        self.show_collections(context, cols)
+                    else:
+                        self.hide_collection(context, cols)
                 else:
-                    func_core.move_to_collection(cols[0])
+                    if len(cols) > 1:
+                        global _cols
+                        _cols = cols
+                        bpy.ops.duckx_tools.group_tools_move_to_collections('INVOKE_DEFAULT')
+                    else:
+                        func_core.move_to_collection(cols[0])
             
             print("------------------------------------------------------------------------")
             print(f"[Active Group: {group.name}] \nList:", cols)
@@ -454,7 +465,43 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
 
 
         return {'FINISHED'}
+
+    def show_others_objects(self, context, objects):
+        print("Showing other collections...")
+        # 1. Show ทุก Collections และ Objects
+        for col in bpy.data.collections:
+            print("Showing collection:", col.name)
+            func_core.hide_collection(col.name, hide_viewport=False)
+            for obj in col.objects:
+                obj.hide_set(False)     # แสดง Object กลับมาใน Viewport
+
+        # 2. ซ่อน Collection ที่อยู่ใน collections[]
+        for obj in objects:
+            if isinstance(obj, str):  # ถ้า collections[] ส่งมาเป็นชื่อ
+                obj = bpy.data.objects.get(obj)
+            if obj:  # ป้องกัน error ถ้าไม่เจอ
+                obj.hide_set(True)
+        return {'FINISHED'}
     
+    def show_others_collections(self, context, collections):
+        print("Showing other collections...")
+        # 1. Show ทุก Collections และ Objects
+        for col in bpy.data.collections:
+            print("Showing collection:", col.name)
+            func_core.hide_collection(col.name, hide_viewport=False)
+            for obj in col.objects:
+                obj.hide_set(False)     # แสดง Object กลับมาใน Viewport
+
+        # 2. ซ่อน Collection ที่อยู่ใน collections[]
+        for col in collections:
+            if isinstance(col, str):  # ถ้า collections[] ส่งมาเป็นชื่อ
+                col = bpy.data.collections.get(col)
+            if col:  # ป้องกัน error ถ้าไม่เจอ
+                func_core.hide_collection(col.name, hide_viewport=True)
+                for obj in col.objects:
+                    obj.hide_set(True)
+        return {'FINISHED'}
+
     def hide_objects(self, context, objects):
         if not objects:
             return {'CANCELLED'}
