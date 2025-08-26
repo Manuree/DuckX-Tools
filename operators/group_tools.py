@@ -510,7 +510,7 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
         for name in col_names:
             lc = find_layer_collection(context.view_layer.layer_collection, name)
             if lc:
-                lc.hide_set = True
+                lc.hide_viewport = True
 
         return {'FINISHED'}
     
