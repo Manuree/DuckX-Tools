@@ -196,6 +196,7 @@ class Duckx_OT_UVRotation(Operator):
                 context.mode == 'EDIT_MESH')    
 
     def invoke(self, context, event):
+        bpy.ops.mesh.select_mode(type='FACE')
         if self.start_modal:
             context.window_manager.modal_handler_add(self)
             func_core.draw_handler_stop()
