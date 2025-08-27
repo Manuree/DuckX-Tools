@@ -625,9 +625,18 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
             bpy.ops.object.select_all(action='DESELECT')
         except Exception:
             pass
+
+        valid_targets = []
         for ob in targets:
-            ob.select_set(True)
-        context.view_layer.objects.active = targets[0]
+            if ob and ob.name in context.view_layer.objects:  # <<< check ว่าอยู่ใน view layer
+                try:
+                    ob.select_set(True)
+                    valid_targets.append(ob)
+                except Exception:
+                    pass
+
+        if valid_targets:
+            context.view_layer.objects.active = valid_targets[0]
 
         return {'FINISHED'}
     
@@ -715,12 +724,13 @@ class Duckx_OT_GroupToolsActiveGroup(Operator):
             ob.hide_set(False)
             #ob.hide_viewport = False
 
-        # 7) ตั้ง selection และ active object หลัง visibility stable แล้ว
+        # 7) ตั้ง selection และ active object
         try:
-            for ob in to_show:
-                if ob.visible_get():
-                    ob.select_set(True)
-            context.view_layer.objects.active = next((o for o in to_show if o.visible_get()), to_show[0])
+            valid = [o for o in to_show if o and o.name in context.view_layer.objects and o.visible_get()]
+            for ob in valid:
+                ob.select_set(True)
+            if valid:
+                context.view_layer.objects.active = valid[0]
         except Exception:
             pass
 
