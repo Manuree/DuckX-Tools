@@ -204,7 +204,7 @@ class Duckx_OT_UVRotation(Operator):
             pr = prefs.get_prefs()
             if pr and pr.overlay_uv_rotation:
                 use_custom = bool(pr and getattr(pr, "overlay_custom_color", False))
-                color = tuple(pr.overlay_frame_color) if use_custom else (0.039, 1.0, 0.835, 1)
+                color = tuple(pr.overlay_frame_color) if use_custom else (0.890196, 0.207843, 0.301961, 1)
                 func_core.draw_handler_start(color=color, thickness=pr.overlay_frame_thickness, margin=pr.overlay_frame_margin)
             return {'RUNNING_MODAL'}
         elif event.shift:
