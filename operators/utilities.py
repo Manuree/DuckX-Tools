@@ -168,11 +168,11 @@ class Duckx_OT_DuplicateAndSeparate(Operator):
 class Duckx_OT_OriginFromSelection(Operator):
     bl_idname = "duckx_tools.origin_from_selection"
     bl_label = "Origin from Selection"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
     bl_icon = "ORIGIN"
     bl_options = {"REGISTER", "UNDO"}
     bl_description = "Set Object Origin to Selection"
+
+    orien : BoolProperty(name="Orient from Selection", default=False)
 
     @classmethod
     def poll(cls, context):
@@ -180,10 +180,25 @@ class Duckx_OT_OriginFromSelection(Operator):
                 context.object.type == 'MESH' and 
                 context.mode == 'EDIT_MESH')
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(self, "orien")
+        
     def execute(self, context):
+        if self.orien:
+            bpy.ops.duckx_tools.orienfromselect()
+            bpy.context.scene.tool_settings.use_transform_data_origin = True
         bpy.ops.view3d.snap_cursor_to_selected()
         bpy.ops.object.editmode_toggle()
+        bpy.ops.transform.transform(mode='ALIGN')
+        bpy.context.scene.tool_settings.use_transform_data_origin = False
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR', center='MEDIAN')
+        bpy.context.scene.transform_orientation_slots[0].type = 'LOCAL'
+
         return {'FINISHED'}
 
 
